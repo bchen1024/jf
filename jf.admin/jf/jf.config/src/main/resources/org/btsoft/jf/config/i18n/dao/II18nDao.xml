@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.btsoft.jf.config.i18n.dao.II18nDao">
+
+	<!-- I18n基本查询语句 -->
+	<sql id="base_sql">
+		select
+		t.i18n_id as i18nId,
+		t.i18n_key as i18nKey,
+		t.i18n_value_cn as i18nValueCN,
+		t.i18n_value_en as i18nValueEN,
+		t.i18n_desc as i18nDesc,
+		t.last_updation_date as lastUpdationDate,
+		u.display_name as updateUserAccount
+		from sys_i18n_t t
+		left join sys_user_t u on u.user_id = t.last_update_by
+	</sql>
+	<!-- I18n基本条件语句 -->
+	<sql id="base_condition">
+		<trim prefix="where" prefixOverrides="and || or">
+			<if test="param1.queryParams!=null">
+				and (trim(lower(t.i18n_key)) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+				  or trim(lower(t.i18n_value_cn)) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+				  or trim(lower(t.i18n_value_en)) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+				)
+			</if>
+		</trim>
+	</sql>
+	<!-- I18n分页查询语句 -->
+	<select id="findI18nList" resultType="org.btsoft.jf.config.i18n.entity.I18nVO">
+		<include refid="base_sql" />
+		<include refid="base_condition" />
+		order by t.i18n_id desc
+		limit #{1.startRow},#{1.pageSize}
+	</select>
+	<!-- I18n分页查询总数 -->
+	<select id="findI18nListCount" resultType="int">
+		select count(1) from sys_i18n_t t
+		<include refid="base_condition" />
+	</select>
+
+	<!-- 更新国际化信息 -->
+	<update id="updateI18n">
+		update sys_i18n_t set
+			i18n_key = trim(#{i18nKey,jdbcType=VARCHAR}),
+			i18n_value_cn = trim(#{i18nValueCN,jdbcType=VARCHAR}),
+			i18n_value_en = trim(#{i18nValueEN,jdbcType=VARCHAR}),
+			last_update_by = #{currentUserId,jdbcType=NUMERIC},
+			last_updation_date = now(),
+			i18n_desc = trim(#{i18nDesc,jdbcType=VARCHAR})
+			where i18n_id = #{i18nId,jdbcType=NUMERIC}
+	</update>
+
+	<!-- 插入国际化信息 -->
+	<insert id="createI18n">
+		insert into sys_i18n_t
+			(i18n_key,
+			i18n_value_cn,
+			i18n_value_en,
+			create_by,
+			last_update_by,
+			i18n_desc)
+			values
+			(trim(#{i18nKey,jdbcType=VARCHAR}),
+			trim(#{i18nValueCN,jdbcType=VARCHAR}),
+			trim(#{i18nValueEN,jdbcType=VARCHAR}),
+			#{currentUserId,jdbcType=NUMERIC},
+			#{currentUserId,jdbcType=NUMERIC},
+			trim(#{i18nDesc,jdbcType=VARCHAR})
+		)
+	</insert>
+
+	<!-- 批量删除国际化 -->
+	<delete id="deleteI18n">
+		delete from sys_i18n_t where
+			i18n_id=#{i18nId,jdbcType=NUMERIC}
+	</delete>
+
+	<!--根据语言获取国际化信息 -->
+	<select id="findCacheI18ns" resultType="org.btsoft.jf.config.i18n.entity.I18nVO">
+		select i18n_key as i18nKey,
+		i18n_value_cn as i18nValueCN,
+		i18n_value_en as i18nValueEN
+		from sys_i18n_t t
+		where t.enable_flag='Y'
+	</select>
+
+	<select id="findI18n" resultType="org.btsoft.jf.config.i18n.entity.I18nVO">
+		select
+			t.i18n_id as i18nId,
+			t.i18n_key as i18nKey,
+			t.i18n_value_cn as i18nValueCN,
+			t.i18n_value_en as i18nValueEN,
+			t.i18n_desc as i18nDesc
+		from sys_i18n_t t
+		where t.i18n_id=#{i18nId,jdbcType=NUMERIC}
+	</select>
+
+	<!--根据国际化key值获取国际化信息 -->
+	<select id="findI18nByKey" resultType="org.btsoft.jf.config.i18n.entity.I18nVO">
+		select i18n_key as i18nKey,
+		i18n_value_cn as i18nValueCN,
+		i18n_value_en as i18nValueEN,
+		last_updation_date as lastUpdationDate
+		from sys_i18n_t t
+		where t.enable_flag='Y'
+		and t.i18n_key=#{i18nKey}
+		limit 1
+	</select>
+	
+	<!--获取所有有效的国际化配置 -->
+	<select id="findI18ns" resultType="java.util.Map">
+		select 
+			i18n_key as i18nKey,
+			i18n_value_cn as i18nValueCN,
+			i18n_value_en as i18nValueEN
+			from sys_i18n_t t
+		where t.enable_flag='Y'
+	</select>
+</mapper>

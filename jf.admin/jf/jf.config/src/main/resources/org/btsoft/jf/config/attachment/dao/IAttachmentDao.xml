@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.btsoft.jf.config.attachment.dao.IAttachmentDao">
+
+	<!--新增附件 -->
+	<insert id="createAttachment">
+		insert into sys_attachment_t
+		(
+		attachment_name,
+		attachment_path,
+		attachment_size,
+		attachment_type,
+		create_by,
+		last_update_by)
+		values
+		(
+		#{attachmentName,jdbcType=VARCHAR},
+		#{attachmentPath,jdbcType=VARCHAR},
+		#{attachmentSize,jdbcType=NUMERIC},
+		#{attachmentType,jdbcType=VARCHAR},
+		#{currentUserId,jdbcType=NUMERIC},
+		#{currentUserId,jdbcType=NUMERIC}
+		)
+		<selectKey keyProperty="attachmentId" resultType="Long"
+			order="AFTER">
+			select last_insert_id()
+		</selectKey>
+	</insert>
+
+	<!--查找单个有效的附件信息 -->
+	<select id="findAttachment" resultType="org.btsoft.jf.config.attachment.entity.AttachmentVO">
+		select 
+			t.attachment_id as attachmentId,
+			t.attachment_name as attachmentName,
+			t.attachment_path as attachmentPath,
+			t.attachment_size as attachmentSize,
+			t.attachment_type as attachmentType
+		from sys_attachment_t t
+		  where t.enable_flag='Y'
+			and t.attachment_id=#{attachmentId,jdbcType=NUMERIC}
+			and t.attachment_type=#{attachmentType,jdbcType=VARCHAR}
+	</select>
+
+	<!-- 附件分页查询 -->
+	<sql id="base_sql">
+		select
+			t.attachment_id   as attachmentId,
+			t.attachment_name as attachmentName,
+			t.attachment_path as attachmentPath,
+			t.attachment_size as attachmentSize,
+			t.attachment_type as attachmentType,
+			t.creation_date   as creationDate,
+			u.display_name    as createUserAccount
+		from sys_attachment_t t
+		left join sys_user_t u on u.user_id=t.create_by
+	</sql>
+	<sql id="base_condition">
+		<trim prefix="where" prefixOverrides="and || or">
+			t.enable_flag='Y'
+			<if test="param1.queryParams!=null">
+				and lower(t.attachment_name) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+			</if>
+		</trim>
+	</sql>
+	<select id="findAttachmentList" resultType="org.btsoft.jf.config.attachment.entity.AttachmentVO">
+		<include refid="base_sql" />
+		<include refid="base_condition" />
+		order by t.attachment_id desc
+		limit #{1.startRow},#{1.pageSize}
+	</select>
+	<select id="findAttachmentListCount" resultType="int">
+		select count(1) from sys_attachment_t t
+		<include refid="base_condition" />
+	</select>
+</mapper>

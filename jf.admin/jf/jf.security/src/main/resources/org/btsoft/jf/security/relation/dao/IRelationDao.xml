@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="org.btsoft.jf.security.relation.dao.IRelationDao">
+	<select id="createRelation">
+	 	begin
+	 	<foreach collection="list" item="item" index="index">
+		    insert into sys_relation_rt
+			  (id,
+			   master_id,
+			   relation_id,
+			   relation_type,
+			   enable_flag,
+			   create_by,
+			   creation_date,
+			   last_update_by,
+			   last_updation_date,
+			   begin_date,
+			   end_date)
+		     values(sys_relation_s.nextval,
+		      	#{item.masterId,jdbcType=NUMERIC},
+		      	#{item.relationId,jdbcType=NUMERIC},
+		      	#{item.relationType,jdbcType=VARCHAR},
+		      	'Y',
+		      	#{item.currentUserId},
+		      	sysdate,
+		      	#{item.currentUserId},
+		      	sysdate,
+		      	trunc(sysdate),
+		      	add_months(trunc(sysdate),3)
+		      );
+	    </foreach>  
+	    end;
+	</select>
+	
+	<delete id="deleteRelation">
+		delete from sys_relation_rt
+		where relation_type=#{relationType,jdbcType=VARCHAR}
+		<if test="id!=null">
+	   	 	 and id=#{id,jdbcType=NUMERIC}
+		</if>
+		<if test="masterId!=null">
+	   	 	 and master_id=#{masterId,jdbcType=NUMERIC}
+		</if>
+		<if test="relationId!=null">
+	   	 	 and relation_id=#{relationId,jdbcType=NUMERIC}
+		</if>
+	 </delete>
+	 
+	 <sql id="base_sql">
+		select rt.id                 as id,
+		       rt.master_id          as masterId,
+		       rt.relation_id        as relationId,
+		       rt.relation_type      as relationType,
+		       rt.last_updation_date as lastUpdationDate,
+		       rt.begin_date         as beginDate,
+		       rt.end_date           as endDate,
+		       <if test="param1.relationType=='user-role'">
+		       u.user_account        as userAccount,
+		       u.user_name           as userName,
+		       r.role_code           as roleCode,
+		       r.role_name           as roleName,
+		       </if>
+		       <if test="param1.relationType=='group-user'">
+		       u.user_account        as userAccount,
+		       u.user_name           as userName,
+		       g.group_code          as groupCode,
+		       g.group_name          as groupName,
+		       </if>
+		       <if test="param1.relationType=='group-role'">
+		       r.role_code           as roleCode,
+		       r.role_name           as roleName,
+		       g.group_code          as groupCode,
+		       g.group_name          as groupName,
+		       </if>
+		       uu.display_name       as updateUserAccount
+		  from sys_relation_rt rt
+		  inner join sys_user_t uu on uu.user_id = rt.last_update_by
+		  <if test="param1.relationType=='user-role'">
+		      inner join sys_role_t r on r.role_id = rt.relation_id
+		      inner join sys_user_t u on u.user_id = rt.master_id
+		  </if>
+		  <if test="param1.relationType=='group-user'">
+		      inner join sys_user_t u on u.user_id = rt.relation_id
+		      inner join sys_group_t g on g.group_id = rt.master_id
+		  </if>
+		  <if test="param1.relationType=='group-role'">
+		      inner join sys_role_t r on r.role_id = rt.relation_id
+		      inner join sys_group_t g on g.group_id = rt.master_id
+		  </if>
+	</sql>
+	
+	<sql id="base_condition">
+	 	 <trim prefix="where" prefixOverrides="and || or">
+	 		rt.relation_type = #{0.relationType,jdbcType=VARCHAR}
+	 		and rt.enable_flag = 'Y'
+			<if test="param1.masterId!=null">
+	   	 	    and rt.master_id=#{0.masterId,jdbcType=NUMERIC}
+			</if>
+			<if test="param1.relationId!=null">
+		   	 	and rt.relation_id=#{0.relationId,jdbcType=NUMERIC}
+			</if>
+			<if test="param1.roleCode!=null">
+		   	 	and lower(r.role_code) like '%'||trim(lower(#{0.roleCode,jdbcType=VARCHAR}))||'%'
+		   	</if>
+		   	<if test="param1.roleName!=null">
+		   	 	and lower(r.role_name) like '%'||trim(lower(#{0.roleName,jdbcType=VARCHAR}))||'%'
+		   	</if>
+		   	<if test="param1.userAccount!=null">
+		   	 	and lower(u.user_account) like '%'||trim(lower(#{0.userAccount,jdbcType=VARCHAR}))||'%'
+		   	</if>
+		   	<if test="param1.userName!=null">
+		   	 	and lower(u.user_name) like '%'||trim(lower(#{0.userName,jdbcType=VARCHAR}))||'%'
+		   	</if>
+		   	<if test="param1.groupCode!=null">
+		   	 	and lower(g.group_code) like '%'||trim(lower(#{0.groupCode,jdbcType=VARCHAR}))||'%'
+		   	</if>
+		   	<if test="param1.groupName!=null">
+		   	 	and lower(g.group_name) like '%'||trim(lower(#{0.groupName,jdbcType=VARCHAR}))||'%'
+		   	</if>
+	 	</trim> 
+	 </sql>
+	 
+	 <select id="findRelationList" resultType="org.btsoft.jf.security.relation.entity.RelationVO">
+	  		<include refid="base_sql"></include>
+            <include refid="base_condition"></include>
+			order by rt.creation_date desc
+			limit #{1.startRow},#{1.pageSize}
+　　 </select>
+
+	<select id="findRelationListCount" resultType="int">
+	    select count(1) from sys_relation_rt rt
+	      inner join sys_user_t uu on uu.user_id = rt.last_update_by 
+	      <if test="param1.relationType=='user-role'">
+		      inner join sys_role_t r on r.role_id = rt.relation_id
+		      inner join sys_user_t u on u.user_id = rt.master_id
+		  </if>
+		  <if test="param1.relationType=='group-user'">
+		      inner join sys_user_t u on u.user_id = rt.relation_id
+		      inner join sys_group_t g on g.group_id = rt.master_id
+		  </if>
+		  <if test="param1.relationType=='group-role'">
+		      inner join sys_role_t r on r.role_id = rt.relation_id
+		      inner join sys_group_t g on g.group_id = rt.master_id
+		  </if>
+		<include refid="base_condition"></include>
+	 </select>
+	 <sql id="no_relation_sql">
+	 	select 
+	 	<if test="param1.relationType=='ru' or param1.relationType=='gu'">
+	 	    t.user_id        as userId,
+	 		t.user_account   as userAccount,
+	 		t.user_name      as userName,
+	 		t.user_desc      as userDesc
+	 	</if>
+	 	<if test="param1.relationType=='ur' or param1.relationType=='gr'">
+	 	    t.role_id        as roleId,
+	 		t.role_code      as roleCode,
+			t.role_name      as roleName,
+			t.role_desc      as roleDesc
+	 	</if>
+	 	<if test="param1.relationType=='ug' or param1.relationType=='rg'">
+	 	    t.group_id       as groupId,
+	 		t.group_code     as groupCode,
+			t.group_name     as groupName,
+			t.group_desc     as groupDesc
+	 	</if>
+	 	from 
+	 	<if test="param1.relationType=='ru' or param1.relationType=='gu'">
+	 		sys_user_t
+	 	</if>
+	 	<if test="param1.relationType=='ur' or param1.relationType=='gr'">
+	 		sys_role_t
+	 	</if>
+	 	<if test="param1.relationType=='ug' or param1.relationType=='rg'">
+	 		sys_group_t
+	 	</if>
+	 		t
+	 </sql>
+	 <sql id="no_relation_condition">
+	 	<trim prefix="where" prefixOverrides="and || or">
+	 		t.enable_flag = 'Y'
+	 		and not exists(
+	 			select 1 from sys_relation_rt rt
+	 			where rt.enable_flag='Y'
+	 			<!-- 获取某个角色的未关联的用户 -->
+	 			<if test="param1.relationType=='ru'">
+	 			    and rt.relation_type='user-role'
+	 			    and rt.master_id=t.user_id
+	 			    and rt.relation_id=#{0.relationId,jdbcType=NUMERIC}
+	 			</if>
+	 			<!-- 获取某个群组的未关联的用户 -->
+	 			<if test="param1.relationType=='gu'">
+	 			    and rt.relation_type='group-user'
+	 			    and rt.relation_id=t.user_id
+	 			    and rt.master_id=#{0.masterId,jdbcType=NUMERIC}
+	 			</if>
+	 			<!-- 获取某个用户的未关联的角色 -->
+	 			<if test="param1.relationType=='ur'">
+	 			    and rt.relation_type='user-role'
+	 			    and rt.relation_id=t.role_id
+	 			    and rt.master_id=#{0.masterId,jdbcType=NUMERIC}
+	 			</if>
+	 			<!-- 获取某个群组的未关联的角色 -->
+	 			<if test="param1.relationType=='gr'">
+	 			    and rt.relation_type='group-role'
+	 			    and rt.relation_id=t.role_id
+	 			    and rt.master_id=#{0.masterId,jdbcType=NUMERIC}
+	 			</if>
+	 			<!-- 获取某个用户的未关联的群组 -->
+	 			<if test="param1.relationType=='ug'">
+	 			    and rt.relation_type='group-user'
+	 			    and rt.master_id=t.group_id
+	 			    and rt.relation_id=#{0.relationId,jdbcType=NUMERIC}
+	 			</if>
+	 			<!-- 获取某个角色的未关联的群组 -->
+	 			<if test="param1.relationType=='rg'">
+	 			    and rt.relation_type='group-role'
+	 			    and rt.master_id=t.group_id
+	 			    and rt.relation_id=#{0.relationId,jdbcType=NUMERIC}
+	 			</if>
+	 		)
+	 	</trim> 
+	 </sql>
+	 <select id="findNoRelationList" resultType="org.btsoft.jf.security.relation.entity.RelationVO">
+	 	select *
+	  		 from (select t.*,rownum rn
+	              from (
+		             <include refid="no_relation_sql"></include>
+		             <include refid="no_relation_condition"></include>
+	              )t
+	          <![CDATA[ 
+	         where rownum <=#{1.endRow})
+	 		where rn >=#{1.startRow}
+	  		]]> 
+	 </select>
+	 <select id="findNoRelationListCount" resultType="int">
+	 	select count(1)	from 
+	 	<if test="param1.relationType=='ru' or param1.relationType=='gu'">
+	 		sys_user_t
+	 	</if>
+	 	<if test="param1.relationType=='ur' or param1.relationType=='gr'">
+	 		sys_role_t
+	 	</if>
+	 	<if test="param1.relationType=='ug' or param1.relationType=='rg'">
+	 		sys_group_t
+	 	</if>
+	 		t
+	 	<include refid="no_relation_condition"></include>
+	 </select>
+	 <select id="findRoleListByUser" resultType="org.btsoft.jf.security.relation.entity.RelationVO">
+	 	select r.role_id   as roleId,
+		       r.role_code as roleCode,
+		       r.role_name as roleName
+		  from sys_relation_rt rt
+		 inner join sys_role_t r on r.role_id = rt.relation_id
+		 where rt.master_id = #{userId,jdbcType=NUMERIC}
+		   and rt.relation_type='user-role'
+		   and rt.begin_date &lt;= sysdate
+		   and rt.end_date >= sysdate
+		   and rt.enable_flag = 'Y'
+		   and r.enable_flag = 'Y'
+		union
+		select r.role_id   as roleId,
+		       r.role_code as roleCode,
+		       r.role_name as roleName
+		  from sys_relation_rt gu
+		 inner join sys_relation_rt gr on gr.master_id = gu.master_id
+		 inner join sys_role_t r on r.role_id = gr.relation_id
+		 where gu.relation_id = #{userId,jdbcType=NUMERIC}
+		   and gu.begin_date &lt;= sysdate
+		   and gu.end_date >= sysdate
+		   and gu.enable_flag = 'Y'
+		   and gr.enable_flag = 'Y'
+		   and r.enable_flag = 'Y'
+	 </select>
+	 
+	 <select id="findMenuListByUser" resultType="java.util.Map">
+	 	with visible_menus as(
+			select t.*
+			  from sys_menu_t t
+			 where t.show_type = '1'
+			   and t.enable_flag = 'Y'
+			<if test="permissionList!=null and !permissionList.isEmpty()">
+				union all
+				select t.*
+				  from sys_menu_t t
+				 where t.show_type = '3'
+				   and t.enable_flag = 'Y'
+				   and t.permission_code in
+				   <foreach collection="permissionList" item="item" index="index" separator="," open="(" close=")">
+				   		<if test="index!=0 and index%800==0">
+				   			)or(
+				   		</if>
+				   		#{item,jdbcType=VARCHAR}
+				   </foreach>
+			</if>
+			   )
+			  select m.menu_id   as "id",
+			         m.menu_icon as "iconCls",
+			         m.parent_id as "parentId",
+			         m.menu_url  as "url",
+			         decode(#{currentLanguage,jdbcType=VARCHAR}, 'zh_CN', m.menu_name_cn, m.menu_name_en) as "text"
+			    from (select t.*
+			            from visible_menus t
+			          union all
+			          select distinct t.*
+			            from sys_menu_t t
+			           where t.show_type = '2'
+			             and t.enable_flag = 'Y'
+			           start with exists (select 1
+			                         from visible_menus vm
+			                        where vm.menu_id = t.menu_id)
+			          connect by nocycle prior t.parent_id = t.menu_id) m
+			   order by m.menu_sort
+	 </select>
+	 
+	 <select id="findPermissionListByUser" resultType="java.lang.String">
+	 	select p.permission_code || '$' || t.permission_code
+		  from sys_permission_t t
+		 inner join sys_permission_t p on p.permission_id = t.parent_id
+		 inner join sys_relation_rt rt on rt.relation_id = t.permission_id
+		 where t.enable_flag='Y'
+		   and p.enable_flag='Y'
+		   and rt.enable_flag='Y'
+		   and t.permission_type = 'method'
+		   and rt.relation_type='role-permission'
+		   <foreach collection="roles" item="item" index="index" separator="," open="and rt.master_id in(" close=")">
+		   		#{item.roleId,jdbcType=VARCHAR}
+		   </foreach>
+	 </select>
+	 
+	 <select id="findPermissionTreeByRole" resultType="java.util.Map">
+	 	select m.permission_id as "id",
+		       decode('zh_CN',#{currentLanguage,jdbcType=VARCHAR}, m.permission_desc_cn, m.permission_desc_en) as "text",
+		       decode('resource',m.permission_type, 'closed', null) as "state",
+		       m.parent_id as "parentId",
+		       decode(rm.relation_id,null,null, 'true') as "checked",
+		       m.permission_type as "permissionType"
+		  from sys_permission_t m
+		  left join sys_relation_rt rm on rm.relation_id = m.permission_id
+		                            and rm.master_id=#{masterId,jdbcType=NUMERIC}
+		                            and rm.relation_type='role-permission'
+		                            and rm.enable_flag = 'Y'
+		 where m.enable_flag = 'Y'
+		 order by m.permission_desc_en
+	 </select>
+	 
+	 <select id="createRolePermissionRef">
+	 	declare
+   		v_roleId number:=#{masterId,jdbcType=NUMERIC};
+   		v_currentUserId number:=#{currentUserId,jdbcType=NUMERIC};
+   		begin
+   			delete from sys_relation_rt t where t.master_id=v_roleId and t.relation_type='role-permission';
+			<foreach collection="rolePermissionList" item="item">
+	  	  		 insert into sys_relation_rt
+				  (id,
+				   master_id,
+				   relation_id,
+				   relation_type,
+				   enable_flag,
+				   create_by,
+				   creation_date,
+				   last_update_by,
+				   last_updation_date)
+			     values(sys_relation_s.nextval,
+			      	v_roleId,
+			      	#{item.relationId,jdbcType=NUMERIC},
+			      	'role-permission',
+			      	'Y',
+			      	v_currentUserId,
+			      	sysdate,
+			      	v_currentUserId,
+			      	sysdate
+			      );
+  			</foreach>
+   		end;
+	 </select>
+</mapper>

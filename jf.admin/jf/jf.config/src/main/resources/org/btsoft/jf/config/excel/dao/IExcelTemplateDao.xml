@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="org.btsoft.jf.config.excel.dao.IExcelTemplateDao">
+
+	<!-- excel模板分页查询 -->
+    <sql id="base_sql">
+  	  select t.excel_template_id   as excelTemplateId,
+	       t.excel_template_code   as excelTemplateCode,
+	       t.excel_template_name   as excelTemplateName,
+	       t.excel_template_desc   as excelTemplateDesc,
+	       t.excel_file_prefix     as excelFilePrefix,
+	       t.send_email            as sendEmail,
+	       t.allow_part_success    as allowPartSuccess,
+	       t.compress_flag         as compressFlag,
+	       t.asyn_flag             as asynFlag,
+	       t.enable_flag           as enableFlag,
+	       t.last_updation_date    as lastUpdationDate,
+	       u.display_name          as updateUserAccount
+	  from sys_excel_template_t t
+	  left join sys_user_t u on u.user_id = t.last_update_by
+  </sql>
+  <sql id="base_condition">
+     <trim prefix="where" prefixOverrides="and || or">
+     	  t.excel_template_type=#{0.excelTemplateType,jdbcType=VARCHAR}
+	  	  <if test="param1.excelTemplateCode!=null">
+	  	  	  and trim(lower(t.excel_template_code)) like trim(lower('%'||#{0.excelTemplateCode}||'%'))
+	  	  </if>
+	  	  <if test="param1.excelTemplateName!=null">
+	  	  	  and trim(lower(t.excel_template_name)) like trim(lower('%'||#{0.excelTemplateName}||'%'))
+	  	  </if>
+	  	  <if test="param1.excelTemplateDesc!=null">
+	  	  	  and trim(lower(t.excel_template_desc)) like trim(lower('%'||#{0.excelTemplateDesc}||'%'))
+	  	  </if>
+	  	  <if test="param1.excelFilePrefix!=null">
+	  	  	  and trim(lower(t.excel_file_prefix)) like trim(lower('%'||#{0.excelFilePrefix}||'%'))
+	  	  </if>
+	  	  <if test="param1.enableFlag!=null">
+	  	  	  and t.enable_flag=#{0.enableFlag}
+	  	  </if>
+	  	  <if test="param1.sendEmail!=null">
+	  	  	  and t.send_email=#{0.sendEmail}
+	  	  </if>
+	  	  <if test="param1.compressFlag!=null">
+	  	  	  and t.compress_flag=#{0.compressFlag}
+	  	  </if>
+	  	  <if test="param1.asynFlag!=null">
+	  	  	  and t.asyn_flag=#{0.asynFlag}
+	  	  </if>
+	  	  <if test="param1.allowPartSuccess!=null">
+	  	  	  and t.allow_part_success=#{0.allowPartSuccess}
+	  	  </if>
+  	  </trim>
+  </sql>
+  <select id="findExcelTemplateList" resultType="org.btsoft.jf.config.excel.entity.ExcelTemplateVO">
+  		<include refid="base_sql"/>
+        <include refid="base_condition"/>
+       order by t.excel_template_id desc
+       limit #{1.startRow},#{1.pageSize}
+  </select>
+  <select id="findExcelTemplateListCount" resultType="int">
+     select count(1) from sys_excel_template_t t
+     <include refid="base_condition"/>
+  </select>
+  
+  <select id="findExcelTemplate" resultType="org.btsoft.jf.config.excel.entity.ExcelTemplateVO">
+  	   <include refid="base_sql"/>
+  	  where (t.excel_template_code=#{excelTemplateCode,jdbcType=VARCHAR}
+  	    and t.excel_template_type=#{excelTemplateType,jdbcType=VARCHAR}) or 
+  	    t.excel_template_id=#{excelTemplateId,jdbcType=NUMERIC}
+  </select>
+  
+  <insert id="createExcelTemplate">
+  	insert into sys_excel_template_t
+	  (excel_template_code,
+	   excel_template_name,
+	   excel_template_desc,
+	   excel_file_prefix,
+	   send_email,
+	   allow_part_success,
+	   compress_flag,
+	   asyn_flag,
+	   enable_flag,
+	   create_by,
+	   creation_date,
+	   last_update_by,
+	   last_updation_date,
+	   excel_template_type)
+	values
+	  (#{excelTemplateCode,jdbcType=VARCHAR},
+	   #{excelTemplateName,jdbcType=VARCHAR},
+	   #{excelTemplateDesc,jdbcType=VARCHAR},
+	   #{excelFilePrefix,jdbcType=VARCHAR},
+	   #{sendEmail,jdbcType=VARCHAR},
+	   #{allowPartSuccess,jdbcType=VARCHAR},
+	   #{compressFlag,jdbcType=VARCHAR},
+	   #{asynFlag,jdbcType=VARCHAR},
+	   'Y',
+	   #{currentUserId,jdbcType=NUMERIC},
+	   now(),
+	   #{currentUserId,jdbcType=NUMERIC},
+	   now(),
+	   #{excelTemplateType,jdbcType=VARCHAR})
+  </insert>
+  
+  <update id="updateExcelTemplate">
+  	update sys_excel_template_t
+	   set excel_template_code = #{excelTemplateCode,jdbcType=VARCHAR},
+	       excel_template_name = #{excelTemplateName,jdbcType=VARCHAR},
+	       excel_template_desc = #{excelTemplateDesc,jdbcType=VARCHAR},
+	       excel_file_prefix   = #{excelFilePrefix,jdbcType=VARCHAR},
+	       send_email		   = #{sendEmail,jdbcType=VARCHAR},
+	       allow_part_success  = #{allowPartSuccess,jdbcType=VARCHAR},
+	       compress_flag       = #{compressFlag,jdbcType=VARCHAR},
+	       asyn_flag           = #{asynFlag,jdbcType=VARCHAR},
+	       last_update_by      = #{currentUserId,jdbcType=NUMERIC},
+	       last_updation_date  = now()
+	 where excel_template_id = #{excelTemplateId,jdbcType=NUMERIC}
+  </update>
+  
+  <select id="deleteExcelTemplate">
+  	begin
+		delete from sys_excel_field_t t where exists(
+			select 1 from sys_excel_sheet_t s where s.excel_sheet_id=t.excel_sheet_id
+			and s.excel_template_id=#{excelTemplateId,jdbcType=NUMERIC}
+		);
+		delete from sys_excel_sheet_t t where t.excel_template_id=#{excelTemplateId,jdbcType=NUMERIC};
+		delete from sys_excel_template_t t where t.excel_template_id=#{excelTemplateId,jdbcType=NUMERIC};
+	end;	
+  </select>
+  
+  <select id="findExcelTemplateCodes" resultType="java.util.Map">
+      select t.excel_template_code as "itemNo",
+             t.excel_template_code as "itemName"
+          from sys_excel_template_t t
+          where t.enable_flag='Y'
+            and t.excel_template_type=#{excelTemplateType,jdbcType=VARCHAR}
+  </select>
+</mapper>

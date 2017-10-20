@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.btsoft.jf.monitor.api.dao.IServiceListDao">
+
+	<!-- 分页查询基本条件 -->
+	<sql id="base_condition">
+		<trim prefix="where" prefixOverrides="and || or">
+			t.service_type=#{0.serviceType,jdbcType=VARCHAR}
+			<if test="param1.queryParams!=null and param1.queryParams!=''">
+				and trim(lower(t.bean_name)) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+			</if>
+			<if test="param1.methodName!=null and param1.methodName!=''">
+				and trim(lower(t.method_name)) like trim(lower(concat('%',#{0.methodName,jdbcType=VARCHAR},'%')))
+			</if>
+		</trim>
+	</sql>
+
+	<!--分页查询主sql -->
+	<select id="findServiceList" resultType="org.btsoft.jf.monitor.api.entity.ServiceListVO">
+		select
+			t.service_id as serviceId,
+			t.bean_name  as beanName,
+			t.class_name as className,
+			t.method_name as methodName,
+			t.method_return as methodReturn,
+			t.method_args   as methodArgs,
+			t.method_exception as methodException,
+			t.method_permission as methodPermission,
+			t.method_audit as methodAudit,
+			t.method_desc as methodDesc,
+			t.service_type as serviceType,
+			t.rest_method as restMethod,
+			t.rest_url as restUrl,
+			t.rest_produces as restProduces,
+			t.last_updation_date as lastUpdationDate,
+			u.display_name as updateUserAccount
+		from sys_service_list_t t
+		left join sys_user_t u on u.user_id = t.last_update_by
+		<include refid="base_condition" />
+		order by t.bean_name,t.method_name
+		limit #{1.startRow},#{1.pageSize}
+	</select>
+	<!--分页查询求和sql -->
+	<select id="findServiceListCount" resultType="int">
+		select count(1) from sys_service_list_t t
+		<include refid="base_condition" />
+	</select>
+
+	<!--批量插入更新服务接口列表 -->
+	<insert id="insertServiceList">
+		insert into sys_service_list_t
+			(
+			bean_name,
+			class_name,
+			method_name,
+			method_return,
+			method_args,
+			method_exception,
+			method_permission,
+			method_audit,
+			method_desc,
+			service_type,
+			rest_method,
+			rest_url,
+			rest_produces,
+			create_by,
+			last_update_by)
+		values
+		<foreach collection="list" item="item" separator=",">
+			(trim(#{item.beanName,jdbcType=VARCHAR}),
+			trim(#{item.className,jdbcType=VARCHAR}),
+			trim(#{item.methodName,jdbcType=VARCHAR}),
+			trim(#{item.methodReturn,jdbcType=VARCHAR}),
+			trim(#{item.methodArgs,jdbcType=VARCHAR}),
+			trim(#{item.methodException,jdbcType=VARCHAR}),
+			trim(#{item.methodPermission,jdbcType=VARCHAR}),
+			trim(#{item.methodAudit,jdbcType=VARCHAR}),
+			trim(#{item.methodDesc,jdbcType=VARCHAR}),
+			trim(#{item.serviceType,jdbcType=VARCHAR}),
+			trim(#{item.restMethod,jdbcType=VARCHAR}),
+			trim(#{item.restUrl,jdbcType=VARCHAR}),
+			trim(#{item.restProduces,jdbcType=VARCHAR}),
+			#{item.currentUserId,jdbcType=NUMERIC},
+			#{item.currentUserId,jdbcType=NUMERIC})
+		</foreach>
+	</insert>
+	
+	<delete id="deleteServiceList">
+		delete from sys_service_list_t where service_type=#{serviceType,jdbcType=VARCHAR}
+	</delete>
+</mapper>

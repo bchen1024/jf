@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.btsoft.jf.config.lookup.dao.ILookupItemDao">
+
+	<!-- 基本查询语句 -->
+	<sql id="base_sql">
+		select
+			t.item_id as itemId,
+			t.code_no as codeNo,
+			t.item_no as itemNo,
+			t.item_name_cn as itemNameCN,
+			t.item_name_en as itemNameEN,
+			t.item_parent as itemParent,
+			t.item_sort   as itemSort,
+			t.item_desc   as itemDesc,
+			t.item_attr1 as itemAttr1,
+			t.item_attr2 as itemAttr2,
+			t.item_attr3 as itemAttr3,
+			t.enable_flag as enableFlag,
+			t.last_updation_date as lastUpdationDate,
+			u.display_name as updateUserAccount
+		from
+			sys_lookup_item_t t
+		left join sys_user_t u ON u.user_id = t.last_update_by
+	</sql>
+	<!-- 基本条件语句 -->
+	<sql id="base_condition">
+		<trim prefix="where" prefixOverrides="and || or">
+			t.code_no=#{0.codeNo,jdbcType=VARCHAR}
+			<if test="param1.queryParams!=null">
+				and (trim(lower(t.item_no)) like
+				trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+				or trim(lower(t.item_name_cn)) like
+				trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+				or trim(lower(t.item_name_en)) like
+				trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+				)
+			</if>
+		</trim>
+	</sql>
+	<!-- 分页查询语句 -->
+	<select id="findLookupItemList" resultType="org.btsoft.jf.config.lookup.entity.LookupItemVO">
+		<include refid="base_sql" />
+		<include refid="base_condition" />
+		order by t.item_sort asc,t.item_id desc
+		limit #{1.startRow},#{1.pageSize}
+	</select>
+	<!-- 分页查询总数 -->
+	<select id="findLookupItemListCount" resultType="int">
+		select count(1) from sys_lookup_item_t t
+		<include refid="base_condition" />
+	</select>
+
+	<!-- 更新 -->
+	<update id="updateLookupItem">
+		update sys_lookup_item_t set
+			item_no = trim(#{itemNo,jdbcType=VARCHAR}),
+			item_name_cn = trim(#{itemNameCN,jdbcType=VARCHAR}),
+			item_name_en = trim(#{itemNameEN,jdbcType=VARCHAR}),
+			item_sort = #{itemSort,jdbcType=NUMERIC},
+			item_parent = #{itemParent,jdbcType=VARCHAR},
+			item_desc   = trim(#{itemDesc,jdbcType=VARCHAR}),
+			enable_flag =#{enableFlag,jdbcType=VARCHAR},
+			item_attr1 = trim(#{itemAttr1,jdbcType=VARCHAR}),
+			item_attr2 = trim(#{itemAttr2,jdbcType=VARCHAR}),
+			item_attr3 = trim(#{itemAttr3,jdbcType=VARCHAR}),
+			last_update_by = #{currentUserId,jdbcType=NUMERIC},
+			last_updation_date = now()
+		where item_id = #{itemId,jdbcType=NUMERIC}
+	</update>
+
+	<!-- 插入 -->
+	<insert id="createLookupItem">
+		insert into sys_lookup_item_t
+			(code_no,
+			item_no,
+			item_name_cn,
+			item_name_en,
+			item_parent,
+			item_sort,
+			item_desc,
+			item_attr1,
+			item_attr2,
+			item_attr3,
+			enable_flag,
+			create_by,
+			last_update_by)
+			values
+			(trim(#{codeNo,jdbcType=VARCHAR}),
+			trim(#{itemNo,jdbcType=VARCHAR}),
+			trim(#{itemNameCN,jdbcType=VARCHAR}),
+			trim(#{itemNameEN,jdbcType=VARCHAR}),
+			trim(#{itemParent,jdbcType=VARCHAR}),
+			trim(#{itemSort,jdbcType=NUMERIC}),
+			trim(#{itemDesc,jdbcType=VARCHAR}),
+			trim(#{itemAttr1,jdbcType=VARCHAR}),
+			trim(#{itemAttr2,jdbcType=VARCHAR}),
+			trim(#{itemAttr3,jdbcType=VARCHAR}),
+			#{enableFlag,jdbcType=VARCHAR},
+			#{currentUserId,jdbcType=NUMERIC},
+			#{currentUserId,jdbcType=NUMERIC}
+		)
+	</insert>
+
+	<!-- 删除 -->
+	<delete id="deleteLookupItem">
+		delete from sys_lookup_item_t where item_id=#{itemId,jdbcType=NUMERIC}
+	</delete>
+
+	<select id="findLookupItem" resultType="org.btsoft.jf.config.lookup.entity.LookupItemVO">
+		select
+			t.item_id as itemId,
+			t.code_no as codeNo,
+			t.item_no as itemNo,
+			t.item_name_cn as itemNameCN,
+			t.item_name_en as itemNameEN,
+			t.item_parent as itemParent,
+			t.item_sort   as itemSort,
+			t.item_desc   as itemDesc,
+			t.item_attr1 as itemAttr1,
+			t.item_attr2 as itemAttr2,
+			t.item_attr3 as itemAttr3,
+			t.enable_flag as enableFlag
+		from
+			sys_lookup_item_t t
+		where t.item_id=#{itemId,jdbcType=NUMERIC}
+	</select>
+	
+	<select id="findLookupItemByCodeNo" resultType="org.btsoft.jf.config.lookup.entity.LookupItemVO">
+		select
+			t.item_id as itemId,
+			t.code_no as codeNo,
+			t.item_no as itemNo,
+			t.item_name_cn as itemNameCN,
+			t.item_name_en as itemNameEN,
+			case
+				when #{currentLanguage,jdbcType=VARCHAR}='zh_CN' then
+				 t.item_name_cn
+				else
+				t.item_name_en
+			end           as itemName,
+			t.item_parent as itemParent,
+			t.item_sort   as itemSort,
+			t.item_desc   as itemDesc,
+			t.item_attr1 as itemAttr1,
+			t.item_attr2 as itemAttr2,
+			t.item_attr3 as itemAttr3
+		from
+			sys_lookup_item_t t
+		where t.code_no     = #{codeNo,jdbcType=VARCHAR}
+		  and t.enable_flag = 'Y'
+		order by t.item_sort asc
+	</select>
+</mapper>

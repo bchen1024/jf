@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="org.btsoft.jf.security.user.dao.IUserDao">
+
+	<!--根据账号/邮箱和密码去获取用户信息，登录系统所用-->
+    <select id="findUserForLogin" resultType="org.btsoft.jf.security.user.entity.UserVO">
+    	select 
+    	   u.user_id            as userId,
+	       u.user_account       as userAccount,
+	       u.user_name          as userName,
+	       u.user_email         as userEmail,
+	       u.user_phone         as userPhone,
+	       u.user_desc          as userDesc,
+	       u.user_timeout       as userTimeout,
+	       nvl(u.password_error,0) as passwordError,
+	       u.display_name       as displayName
+	    from sys_user_t u
+	    where u.enable_flag='Y'
+	    	and u.user_password=#{userPassword,jdbcType=VARCHAR}
+	    	and (u.user_account=#{userAccount,jdbcType=VARCHAR}
+	    	  or u.user_email=#{userAccount,jdbcType=VARCHAR}
+	    	  or u.user_phone=#{userAccount,jdbcType=VARCHAR})
+    </select>
+    
+	<sql id="base_sql">
+  	  select 
+    	   u.user_id            as userId,
+	       u.user_account       as userAccount,
+	       u.user_name          as userName,
+	       u.user_email         as userEmail,
+	       u.user_phone         as userPhone,
+	       u.user_desc          as userDesc,
+	       u.user_timeout       as userTimeout,
+	       ifnull(u.password_error,0)       as passwordError,
+	       u.enable_flag        as enableFlag,
+	       u.last_updation_date as lastUpdationDate,
+	       u.display_name       as displayName,
+	       t.display_name as updateUserAccount
+  		from sys_user_t u
+  		left join sys_user_t t on t.user_id=u.last_update_by
+  	</sql>
+	<sql id="base_condition">
+	 <trim prefix="where" prefixOverrides="and || or">
+	 	 u.enable_flag='Y'
+	 	 <if test="param1.queryParams!=null">
+			and (trim(lower(u.user_account)) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+			  or trim(lower(u.user_name)) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+			  or trim(lower(u.display_name)) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+			)
+		 </if>
+	  	 <if test="param1.userAccount!=null">
+	   	 	and trim(lower(u.user_account)) like trim(lower('%'||#{0.userAccount,jdbcType=VARCHAR}||'%'))
+	   	 </if>
+	   	  <if test="param1.userName!=null">
+	   	 	and trim(lower(u.user_name)) like trim(lower('%'||#{0.userName,jdbcType=VARCHAR}||'%'))
+	   	 </if>
+	   	 <if test="param1.userEmail!=null">
+	   	 	and trim(lower(u.user_email)) like trim(lower('%'||#{0.userEmail,jdbcType=VARCHAR}||'%'))
+	   	 </if>
+	   	 <if test="param1.userPhone!=null">
+	   	 	and trim(lower(u.user_phone)) like trim(lower('%'||#{0.userPhone,jdbcType=VARCHAR}||'%'))
+	   	 </if>
+	   	 <if test="param1.userDesc!=null">
+	   	 	and trim(lower(u.user_desc)) like trim(lower('%'||#{0.userDesc,jdbcType=VARCHAR}||'%'))
+	   	 </if>
+   	 </trim>
+	</sql>
+	
+	<!-- 用户分页查询-->
+    <select id="findUserList" resultType="org.btsoft.jf.security.user.entity.UserVO">
+  		<include refid="base_sql"/>
+        <include refid="base_condition"/>
+       order by u.user_id desc
+       limit #{1.startRow},#{1.pageSize}
+    </select>
+    <select id="findUserListCount" resultType="int">
+	    select count(1) from sys_user_t u
+	    <include refid="base_condition"/>
+    </select>
+
+    <!--新增单个用户-->
+    <insert id="createUser">
+    	declare
+    	v_count  number; 
+    	v_userAccount varchar2(20);
+    	begin
+    		select count(1) into v_count from sys_user_t u where u.user_account=trim(#{userAccount,jdbcType=VARCHAR}) and u.enable_flag='Y';
+    		if v_count>0 and v_count &lt; 10 then
+    			v_userAccount:=#{userAccount,jdbcType=VARCHAR}||'0'||v_count;
+    		elsif v_count>10 then
+    			v_userAccount:=#{userAccount,jdbcType=VARCHAR}||v_count;
+    		else
+    			v_userAccount:=#{userAccount,jdbcType=VARCHAR};
+    		end if;
+	    	<selectKey keyProperty="userId" resultType="Long" order="BEFORE">
+				select sys_user_s.nextval from dual
+			</selectKey>
+			insert into sys_user_t
+			  (user_id,
+			   user_account,
+			   user_name,
+			   user_password,
+			   user_email,
+			   user_phone,
+			   user_desc,
+			   create_by,
+			   last_update_by,
+			   display_name)
+			values
+			  (#{userId,jdbcType=NUMERIC},
+			   v_userAccount,
+			   trim(#{userName,jdbcType=VARCHAR}),
+			   trim(#{userPassword,jdbcType=VARCHAR}),
+			   trim(#{userEmail,jdbcType=VARCHAR}),
+			   trim(#{userPhone,jdbcType=VARCHAR}),
+			   trim(#{userDesc,jdbcType=VARCHAR}),
+			   #{currentUserId,jdbcType=NUMERIC},
+			   #{currentUserId,jdbcType=NUMERIC},
+			   v_userAccount||' '||trim(#{userName,jdbcType=VARCHAR})
+			 );
+		 end;
+    </insert>
+    
+    <!--根据主键用户id查找单个用户信息-->
+    <select id="findUser" resultType="org.btsoft.jf.security.user.entity.UserVO">
+    	select 
+    	   u.user_id            as userId,
+	       u.user_account       as userAccount,
+	       u.user_name          as userName,
+	       u.user_email         as userEmail,
+	       u.user_phone         as userPhone,
+	       u.user_desc          as userDesc,
+	       u.user_timeout       as userTimeout,
+	       u.enable_flag        as enableFlag
+  		from sys_user_t u
+  		where u.user_id=#{userId,jdbcType=NUMERIC}
+  		 <if test="userAccount!=null">
+	   	 	or u.user_account=#{userAccount,jdbcType=VARCHAR}
+	   	 </if>
+    </select>
+    
+    <!--更新单个用户-->
+    <update id="updateUser">
+	    update sys_user_t u
+		   set user_name          = trim(#{userName,jdbcType=VARCHAR}),
+		       user_email         = trim(#{userEmail,jdbcType=VARCHAR}),
+		       user_phone         = trim(#{userPhone,jdbcType=VARCHAR}),
+		       user_desc          = trim(#{userDesc,jdbcType=VARCHAR}),
+		       last_update_by     = #{currentUserId,jdbcType=NUMERIC},
+		       display_name       = concat(user_account,' ',trim(#{userName,jdbcType=VARCHAR})),
+		       last_updation_date = now()
+		 where user_id = #{userId,jdbcType=NUMERIC}
+		 <if test="userAccount!=null">
+	   	 	or u.user_account=#{userAccount,jdbcType=VARCHAR}
+	   	 </if>
+    </update>
+    
+    <!--删除用户，软删除，将该用户改为失效-->
+    <update id="deleteUser">
+    	update sys_user_t
+    		set enable_flag	   ='N',
+    		last_update_by     = #{currentUserId,jdbcType=NUMERIC},
+		    last_updation_date = sysdate
+		where user_id = #{userId,jdbcType=NUMERIC}
+		<if test="userAccount!=null">
+	   	 	or u.user_account=#{userAccount,jdbcType=VARCHAR}
+	   	 </if>
+    </update>
+	 
+	<select id="queryUser" resultType="org.btsoft.jf.security.user.entity.UserVO">
+		select 
+    	   u.user_id            as userId,
+	       u.user_account       as userAccount,
+	       u.user_name          as userName,
+	       u.user_email         as userEmail,
+	       u.user_phone         as userPhone,
+	       u.display_name       as displayName
+  		from sys_user_t u
+  		where u.enable_flag='Y'
+  		and (
+  			u.user_account like #{q,jdbcType=VARCHAR}||'%' or
+  			u.user_name like #{q,jdbcType=VARCHAR}||'%' or
+  			u.user_email like #{q,jdbcType=VARCHAR}||'%'
+  		)
+  		and rownum &lt; 20
+	</select>
+</mapper>

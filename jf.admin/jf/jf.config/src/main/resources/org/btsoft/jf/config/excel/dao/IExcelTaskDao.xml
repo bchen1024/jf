@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="org.btsoft.jf.config.excel.dao.IExcelTaskDao">
+
+	<!-- excel任务分页查询 -->
+    <sql id="base_sql">
+  	  select t.task_id         as taskId,
+	       t.task_name       as taskName,
+	       t.task_type       as taskType,
+	       t.file_name       as fileName,
+	       t.file_size       as fileSize,
+	       t.file_rows       as fileRows,
+	       t.task_status     as taskStatus,
+	       t.task_start_time as taskStartTime,
+	       t.task_end_time   as taskEndTime,
+	       t.task_cost       as taskCost,
+	       t.creation_date   as creationDate,
+	       u.display_name    as createUserAccount,
+	       case
+			when #{0.currentLanguage,jdbcType=VARCHAR}='zh_CN'
+			then l.item_name_cn
+			else
+			l.item_name_en
+		   end as taskStatusName
+	  from sys_excel_task_t t
+	  left join sys_user_t u on u.user_id = t.create_by
+	  left join sys_lookup_item_t l on l.item_no=t.task_status and l.code_no='excel_task_status'
+  </sql>
+  <sql id="base_condition">
+     <trim prefix="where" prefixOverrides="and || or">
+	  	  <if test="param1.fileName!=null">
+	  	  	  and trim(lower(t.file_name)) like trim(lower('%'||#{0.fileName}||'%'))
+	  	  </if>
+	  	   <if test="param1.taskName!=null">
+	  	  	  and t.task_name =#{0.taskName}
+	  	  </if>
+	  	  <if test="param1.taskType!=null">
+	  	  	  and t.task_type =#{0.taskType}
+	  	  </if>
+	  	  <if test="param1.taskStatus!=null">
+	  	  	  and t.task_status =#{0.taskStatus}
+	  	  </if>
+	  	   <if test="param1.dataOwner!='all'">
+	  	  	  and t.create_by =#{0.currentUserId}
+	  	  </if>
+  	  </trim>
+  </sql>
+  <select id="findExcelTaskList" resultType="org.btsoft.jf.config.excel.entity.ExcelTaskVO">
+  		 <include refid="base_sql"/>
+         <include refid="base_condition"/>
+        order by t.task_id desc
+        limit #{1.startRow},#{1.pageSize}
+  </select>
+  <select id="findExcelTaskListCount" resultType="int">
+     select count(1) from sys_excel_task_t t
+     <include refid="base_condition"/>
+  </select>
+  
+  <insert id="createExcelTask">
+  	<selectKey keyProperty="taskId" resultType="long" order="BEFORE">
+		select sys_excel_task_s.nextval from dual
+	</selectKey>
+  	insert into sys_excel_task_t
+	  (task_id,
+	   task_name,
+	   task_type,
+	   file_name,
+	   file_path,
+	   file_size,
+	   file_rows,
+	   task_status,
+	   <if test="taskStartTime!=null">
+	   	   task_start_time,
+	   </if>
+	   <if test="taskEndTime!=null">
+	   	   task_end_time,
+	   </if>
+	   task_cost,
+	   task_error,
+	   enable_flag,
+	   create_by,
+	   creation_date,
+	   last_update_by,
+	   last_updation_date)
+	values
+	  (#{taskId,jdbcType=NUMERIC},
+	   #{taskName,jdbcType=VARCHAR},
+	   #{taskType,jdbcType=VARCHAR},
+	   #{fileName,jdbcType=VARCHAR},
+	   #{filePath,jdbcType=VARCHAR},
+	   #{fileSize,jdbcType=NUMERIC},
+	   #{fileRows,jdbcType=NUMERIC},
+	   #{taskStatus,jdbcType=VARCHAR},
+	   <if test="taskStartTime!=null">
+	  	 #{taskStartTime},
+	   </if>
+	   <if test="taskEndTime!=null">
+	   	#{taskEndTime},
+	   </if>
+	   #{taskCost,jdbcType=NUMERIC},
+	   #{taskError,jdbcType=VARCHAR},
+	   'Y',
+	   #{currentUserId,jdbcType=NUMERIC},
+	   sysdate,
+	   #{currentUserId,jdbcType=NUMERIC},
+	   sysdate)
+  </insert>
+  
+  <select id="findExcelTask" resultType="org.btsoft.jf.config.excel.entity.ExcelTaskVO">
+  	select t.task_id         as taskId,
+  		   t.task_name       as taskName,
+  		   t.task_type       as taskType,
+	       t.file_name       as fileName,
+	       t.file_size       as fileSize,
+	       t.file_path       as filePath,
+	       t.file_rows       as fileRows,
+	       t.task_status     as taskStatus,
+	       t.task_start_time as taskStartTime,
+	       t.task_end_time   as taskEndTime,
+	       t.task_cost       as taskCost,
+	       u.user_email      as taskOwnerEmail,
+	       case
+			when #{currentLanguage,jdbcType=VARCHAR}='zh_CN'
+			then l.item_name_cn
+			else
+			l.item_name_en
+		   end as taskStatusName
+	  from sys_excel_task_t t
+	   left join sys_user_t u on u.user_id = t.create_by
+	   left join sys_lookup_item_t l on l.item_no=t.task_status and l.code_no='excel_task_status'
+  	where t.task_id=#{taskId,jdbcType=NUMERIC}
+  </select>
+  
+  <update id="updateExcelTask">
+  	update sys_excel_task_t
+	   set 
+	   <if test="fileName!=null">
+	   	   file_name          = #{fileName,jdbcType=VARCHAR},
+	   </if>
+	   <if test="filePath!=null">
+	   	   file_path          = #{filePath,jdbcType=VARCHAR},
+	   </if>
+	   <if test="fileSize!=null">
+	   	   file_size          = #{fileSize,jdbcType=NUMERIC},
+	   </if>
+	   <if test="fileRows!=null">
+	   	   file_rows          = #{fileRows,jdbcType=NUMERIC},
+	   </if>
+	   <if test="taskStatus!=null">
+	   	   task_status        = #{taskStatus,jdbcType=VARCHAR},
+	   </if>
+	   <if test="taskStartTime!=null">
+	   	   task_start_time      = #{taskStartTime},
+	   </if>
+	   <if test="taskEndTime!=null">
+	   	   task_end_time      = #{taskEndTime},
+	   </if>
+	   <if test="taskCost!=null">
+	   	   task_cost          = #{taskCost,jdbcType=NUMERIC},
+	   </if>
+	   <if test="taskError!=null">
+	   	   task_error        = #{taskError,jdbcType=VARCHAR},
+	   </if>
+	       last_update_by    = #{currentUserId,jdbcType=NUMERIC},
+	       last_updation_date = sysdate
+		 where task_id = #{taskId,jdbcType=NUMERIC}
+  </update>
+</mapper>

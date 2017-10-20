@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.btsoft.jf.monitor.log.dao.IAuditLogDao">
+
+	<!-- 分页查询基本条件 -->
+	<sql id="base_condition">
+		<trim prefix="where" prefixOverrides="and || or">
+			<if test="param1.queryParams!=null and param1.queryParams!=''">
+				and trim(lower(t.log_method)) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+			</if>
+		</trim>
+	</sql>
+
+	<!--分页查询主sql -->
+	<select id="findAuditLogList" resultType="org.btsoft.jf.monitor.log.entity.AuditLogVO">
+		select
+			t.log_time as logTime,
+			t.log_account as logAccount,
+			t.log_ip as logIp,
+			t.log_host as logHost,
+			t.log_class as logClass,
+			t.log_method as logMethod,
+			t.log_message as logMessage,
+			t.log_start_time as logStartTime,
+			t.log_end_time as logEndTime,
+			t.log_cast as logCast,
+			t.log_url as logUrl,
+			t.log_type as logType,
+			t.log_client as logClient
+		from sys_audit_log_t t
+		<include refid="base_condition" />
+		order by t.log_time desc
+		limit #{1.startRow},#{1.pageSize}
+	</select>
+	<!--分页查询求和sql -->
+	<select id="findAuditLogListCount" resultType="int">
+		select count(1) from sys_audit_log_t t
+		<include refid="base_condition" />
+	</select>
+
+	<!--批量插入更新服务接口列表 -->
+	<insert id="createAuditLog">
+		insert into sys_audit_log_t
+			(
+			log_time,
+			log_account,
+			log_ip,
+			log_host,
+			log_class,
+			log_method,
+			log_message,
+			log_start_time,
+			log_end_time,
+			log_cast,
+			log_url,
+			log_type,
+			log_client,
+			enable_flag,
+			create_by,
+			last_update_by)
+		values
+			(#{logTime},
+			#{logAccount,jdbcType=VARCHAR},
+			#{logIp,jdbcType=VARCHAR},
+			#{logHost,jdbcType=VARCHAR},
+			#{logClass,jdbcType=VARCHAR},
+			#{logMethod,jdbcType=VARCHAR},
+			#{logMessage,jdbcType=VARCHAR},
+			#{logStartTime},
+			#{logEndTime},
+			#{logCast,jdbcType=NUMERIC},
+			#{logUrl,jdbcType=VARCHAR},
+			#{logType,jdbcType=VARCHAR},
+			#{logClient,jdbcType=VARCHAR},
+			'Y',
+			#{currentUserId,jdbcType=NUMERIC},
+			#{currentUserId,jdbcType=NUMERIC})
+	</insert>
+</mapper>

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.btsoft.jf.config.property.dao.IPropertyDao">
+
+	<!-- 字典属性分页查询基本sql -->
+	<sql id="base_sql">
+		select
+		t.property_id as propertyId,
+		t.property_key as propertyKey,
+		t.property_value as propertyValue,
+		t.property_type as propertyType,
+		t.property_attr1 as propertyAttr1,
+		t.property_attr2 as propertyAttr2,
+		t.property_attr3 as propertyAttr3,
+		t.property_desc as propertyDesc,
+		t.enable_flag as enableFlag,
+		t.property_publish as propertyPublish,
+		t.last_updation_date as lastUpdationDate,
+		u.display_name as updateUserAccount,
+		case
+		when #{0.currentLanguage,jdbcType=VARCHAR}='zh_CN'
+		then l.item_name_cn
+		else
+		l.item_name_en
+		end as propertyTypeName
+		from sys_property_t t
+		left join sys_user_t u on u.user_id = t.last_update_by
+		left join sys_lookup_item_t l on l.code_no='sys_property_type'
+		and l.item_no=t.property_type
+		and l.enable_flag='Y'
+	</sql>
+	<!-- 字典属性分页查询基本条件 -->
+	<sql id="base_condition">
+		<trim prefix="where" prefixOverrides="and || or">
+			<if test="param1.queryParams!=null">
+				and lower(t.property_key) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+			</if>
+		</trim>
+	</sql>
+	<!--数据字典分页查询主sql -->
+	<select id="findPropertyList" resultType="org.btsoft.jf.config.property.entity.PropertyVO">
+		<include refid="base_sql" />
+		<include refid="base_condition" />
+		order by t.property_id desc
+		limit #{1.startRow},#{1.pageSize}
+	</select>
+	<!--数据字典分页查询求和sql -->
+	<select id="findPropertyListCount" resultType="int">
+		select count(1) from sys_property_t t
+		<include refid="base_condition" />
+	</select>
+
+	<!-- 创建字典属性 -->
+	<insert id="createProperty">
+		insert into sys_property_t
+		(property_key,
+		property_value,
+		property_type,
+		property_attr1,
+		property_attr2,
+		property_attr3,
+		property_desc,
+		enable_flag,
+		property_publish,
+		create_by,
+		last_update_by)
+		values
+		(trim(#{propertyKey,jdbcType=VARCHAR}),
+		trim(#{propertyValue,jdbcType=VARCHAR}),
+		trim(#{propertyType,jdbcType=VARCHAR}),
+		trim(#{propertyAttr1,jdbcType=VARCHAR}),
+		trim(#{propertyAttr2,jdbcType=VARCHAR}),
+		trim(#{propertyAttr3,jdbcType=VARCHAR}),
+		trim(#{propertyDesc,jdbcType=VARCHAR}),
+		ifnull(trim(#{enableFlag,jdbcType=VARCHAR}),'Y'),
+		ifnull(trim(#{propertyPublish,jdbcType=VARCHAR}),'N'),
+		#{currentUserId,jdbcType=NUMERIC},
+		#{currentUserId,jdbcType=NUMERIC}
+		)
+	</insert>
+
+	<!-- 根据主键或者字典键获取单个字典对象 -->
+	<select id="findProperty" resultType="org.btsoft.jf.config.property.entity.PropertyVO">
+		select
+		t.property_id as propertyId,
+		t.property_key as propertyKey,
+		t.property_value as propertyValue,
+		t.property_type as propertyType,
+		t.property_attr1 as propertyAttr1,
+		t.property_attr2 as propertyAttr2,
+		t.property_attr3 as propertyAttr3,
+		t.property_desc as propertyDesc,
+		t.enable_flag as enableFlag,
+		t.last_updation_date as lastUpdationDate,
+		t.property_publish as propertyPublish
+		from sys_property_t t
+		<trim prefix="where" prefixOverrides="and || or">
+			<if test="propertyId!=null">
+				and t.property_id=#{propertyId,jdbcType=NUMERIC}
+			</if>
+			<if test="propertyKey!=null">
+				and t.property_key=#{propertyKey,jdbcType=VARCHAR}
+			</if>
+			<if test="enableFlag!=null">
+				and t.enable_flag=#{enableFlag,jdbcType=VARCHAR}
+			</if>
+			<if test="enableFlag==null">
+				and t.enable_flag='Y'
+			</if>
+		</trim>
+	</select>
+
+	<!-- 更新字典属性 -->
+	<update id="updateProperty">
+		update sys_property_t
+		set property_key = trim(#{propertyKey,jdbcType=VARCHAR}),
+		property_value = trim(#{propertyValue,jdbcType=VARCHAR}),
+		property_type = trim(#{propertyType,jdbcType=VARCHAR}),
+		property_attr1 = trim(#{propertyAttr1,jdbcType=VARCHAR}),
+		property_attr2 = trim(#{propertyAttr2,jdbcType=VARCHAR}),
+		property_attr3 = trim(#{propertyAttr3,jdbcType=VARCHAR}),
+		property_desc = trim(#{propertyDesc,jdbcType=VARCHAR}),
+		enable_flag = ifnull(trim(#{enableFlag,jdbcType=VARCHAR}),'N'),
+		property_publish = ifnull(trim(#{propertyPublish,jdbcType=VARCHAR}),'N'),
+		last_update_by = #{currentUserId,jdbcType=NUMERIC},
+		last_updation_date = now()
+		where property_id = #{propertyId,jdbcType=NUMERIC}
+		<if test="propertyKey!=null">
+			or property_key=#{propertyKey,jdbcType=VARCHAR}
+		</if>
+	</update>
+	<!-- 更新字典特定字段值 -->
+	<update id="updateSingleProperty">
+		update sys_property_t
+		set
+		<if test="propertyKey!=null">
+			property_key = trim(#{propertyKey,jdbcType=VARCHAR}),
+		</if>
+		<if test="propertyValue!=null">
+			property_value = trim(#{propertyValue,jdbcType=VARCHAR}),
+		</if>
+		<if test="propertyType!=null">
+			property_type = trim(#{propertyType,jdbcType=VARCHAR}),
+		</if>
+		<if test="propertyAttr1!=null">
+			property_attr1 = trim(#{propertyAttr1,jdbcType=VARCHAR}),
+		</if>
+		<if test="propertyAttr2!=null">
+			property_attr2 = trim(#{propertyAttr2,jdbcType=VARCHAR}),
+		</if>
+		<if test="propertyAttr3!=null">
+			property_attr3 = trim(#{propertyAttr3,jdbcType=VARCHAR}),
+		</if>
+		<if test="propertyDesc!=null">
+			property_desc = trim(#{propertyDesc,jdbcType=VARCHAR}),
+		</if>
+		<if test="enableFlag!=null">
+			enable_flag = ifnull(trim(#{enableFlag,jdbcType=VARCHAR}),'N'),
+		</if>
+		<if test="propertyPublish!=null">
+			property_publish = ifnull(trim(#{propertyPublish,jdbcType=VARCHAR}),'N'),
+		</if>
+		last_update_by = #{currentUserId,jdbcType=NUMERIC},
+		last_updation_date = now()
+		where property_id = #{propertyId,jdbcType=NUMERIC}
+		<if test="propertyKey!=null">
+			or property_key=#{propertyKey,jdbcType=VARCHAR}
+		</if>
+	</update>
+
+	<!-- 删除字典属性 -->
+	<delete id="deleteProperty">
+		delete from sys_property_t where property_id =
+		#{propertyId,jdbcType=NUMERIC}
+		<if test="propertyKey!=null">
+			or property_key=#{propertyKey,jdbcType=VARCHAR}
+		</if>
+	</delete>
+
+	<select id="findPropertys" resultType="org.btsoft.jf.config.property.entity.PropertyVO">
+		select
+			t.property_key as propertyKey,
+			t.property_value as propertyValue
+		from sys_property_t t
+		where t.enable_flag='Y'
+		  and t.property_type=#{propertyType,jdbcType=VARCHAR}
+	</select>
+</mapper>

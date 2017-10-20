@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="org.btsoft.jf.config.htmlarea.dao.IHtmlAreaDao">
+	<!-- 富文本分页查询-->
+	<select id="findHtmlAreaList" resultType="org.btsoft.jf.config.htmlarea.entity.HtmlAreaVO">
+           select t.htmlarea_id          as htmlAreaId,
+		       t.htmlarea_name        as htmlAreaName,
+		       t.htmlarea_type        as htmlAreaType,
+		       case
+				when #{0.currentLanguage,jdbcType=VARCHAR}='zh_CN' then 
+					l.item_name_cn
+				else
+					l.item_name_en
+				end  as htmlAreaTypeName,
+		       t.htmlarea_title       as htmlAreaTitle,
+		       t.htmlarea_mapping_url as htmlAreaMappingUrl,
+		       t.enable_flag          as enableFlag,
+		       t.last_updation_date   as lastUpdationDate,
+		       t.htmlarea_desc        as htmlAreaDesc,
+		       u.display_name         as updateUserAccount
+		  from sys_htmlarea_t t
+		  left join sys_user_t u on u.user_id=t.last_update_by
+		  left join sys_lookup_item_t l on l.code_no = 'sys_htmlarea_type'
+		                                and l.item_no = t.htmlarea_type
+		                                and l.enable_flag='Y'
+		  <include refid="base_condition"/>
+		 order by t.htmlarea_id desc
+		 limit #{1.startRow},#{1.pageSize}
+  </select>
+  <!--基本查询条件-->
+  <sql id="base_condition">
+  	 <trim prefix="where" prefixOverrides="and || or">
+  	 	 <if test="param1.queryParams!=null">
+			 and lower(t.htmlarea_name) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+		 </if>
+   	 </trim>
+  </sql>
+  <!-- 富文本分页查询求和-->
+  <select id="findHtmlAreaListCount" resultType="int">
+     select count(1) from sys_htmlarea_t t
+      <include refid="base_condition"/>
+  </select>
+  
+  <!--新增富文本-->
+  <insert id="createHtmlArea">
+  	insert into sys_htmlarea_t
+	  (htmlarea_name,
+	   htmlarea_type,
+	   htmlarea_title,
+	   htmlarea_mapping_url,
+	   htmlarea_content,
+	   enable_flag,
+	   create_by,
+	   last_update_by,
+	   htmlarea_desc)
+	values
+	  ( trim(#{htmlAreaName,jdbcType=VARCHAR}),
+	   #{htmlAreaType,jdbcType=VARCHAR},
+	   trim(#{htmlAreaTitle,jdbcType=VARCHAR}),
+	   trim(#{htmlAreaMappingUrl,jdbcType=VARCHAR}),
+	   trim(#{htmlAreaContent,jdbcType=VARCHAR}),
+	   'Y',
+	   #{currentUserId,jdbcType=NUMERIC},
+	   #{currentUserId,jdbcType=NUMERIC},
+	   trim(#{htmlAreaDesc,jdbcType=VARCHAR}))
+  </insert>
+  
+  <!--获取单个富文本信息-->
+  <select id="findHtmlArea" resultType="org.btsoft.jf.config.htmlarea.entity.HtmlAreaVO">
+  	   select t.htmlarea_id        as htmlAreaId,
+		      t.htmlarea_name      as htmlAreaName,
+		      t.htmlarea_type      as htmlAreaType,
+		      t.htmlarea_mapping_url as htmlAreaMappingUrl,
+		      t.htmlarea_content   as htmlAreaContent,
+		      t.htmlarea_title     as htmlAreaTitle,
+		      t.htmlarea_desc      as htmlAreaDesc,
+		      t.last_updation_date as lastUpdationDate
+		  from sys_htmlarea_t t
+		  where t.htmlarea_id=#{htmlAreaId,jdbcType=NUMERIC}
+		  <if test="htmlAreaName!=null">
+	   	 	or t.htmlarea_name=trim(#{htmlAreaName,jdbcType=VARCHAR})
+	   	 </if>                              
+  </select>
+  
+   <!--更新单个富文本信息-->
+  <update id="updateHtmlArea">
+	 update sys_htmlarea_t
+	   set htmlarea_name      = trim(#{htmlAreaName,jdbcType=VARCHAR}),
+	       htmlarea_type      = #{htmlAreaType,jdbcType=VARCHAR},
+	       htmlarea_title     = trim(#{htmlAreaTitle,jdbcType=VARCHAR}),
+	       htmlarea_mapping_url=trim(#{htmlAreaMappingUrl,jdbcType=VARCHAR}),
+	       htmlarea_content   = trim(#{htmlAreaContent,jdbcType=VARCHAR}),
+	       last_update_by     = #{currentUserId,jdbcType=NUMERIC},
+	       last_updation_date = now(),
+	       htmlarea_desc      = trim(#{htmlAreaDesc,jdbcType=VARCHAR})
+	 where htmlarea_id = #{htmlAreaId,jdbcType=NUMERIC}
+  </update>
+  
+   <!--删除单个富文本信息-->
+  <delete id="deleteHtmlArea">
+      delete from sys_htmlarea_t where htmlarea_id=#{htmlAreaId,jdbcType=NUMERIC}
+  </delete>
+</mapper>

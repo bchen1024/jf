@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="org.btsoft.jf.security.dept.dao.IDeptDao">
+  
+  <!--分页条件查询组织机构start -->
+  <sql id="base_sql">
+  	  select 
+  	   t.dept_id      as deptId,
+  	   t.dept_name_cn as deptNameCN,
+       t.dept_name_en as deptNameEN,
+       t.parent_id    as "_parentId",
+       decode('zh_CN',#{currentLanguage,jdbcType=VARCHAR},t.dept_name_cn,t.dept_name_en) as deptName,
+       t.dept_desc    as deptDesc,
+       t.enable_flag  as enableFlag,
+       u.display_name as updateUserAccount,
+       t.last_updation_date as lastUpdationDate
+  	from sys_dept_t t
+  	left join sys_user_t u on u.user_id=t.last_update_by
+  </sql>
+  <sql id="base_condition">
+  	 <trim prefix="where" prefixOverrides="and || or">
+	  	 <if test="deptId!=null">
+  		 	  and not exists(
+  		 		select 1
+         		 from sys_dept_t m
+         		where m.dept_id = t.dept_id
+		         start with m.dept_id = #{deptId,jdbcType=NUMERIC}
+		        connect by prior m.dept_id = m.parent_id
+  		 	  )
+  		  </if>
+   	 </trim>
+  </sql>
+  <select id="findDeptList" resultType="org.btsoft.jf.security.dept.entity.DeptVO">
+  		<include refid="base_sql"/>
+        <include refid="base_condition"/>
+        order by t.creation_date desc
+  </select>
+  <select id="findfindDeptListListCount" resultType="int">
+     select count(1) from sys_dept_t t
+     <include refid="base_condition"/>
+  </select>
+  <!--分页条件查询组织机构end -->
+  
+  <!--插入组织机构-->
+  <insert id="createDept">
+  	  insert into sys_dept_t
+	  (dept_id,
+	   dept_name_cn,
+	   dept_name_en,
+	   dept_desc,
+	   parent_id,
+	   enable_flag,
+	   create_by,
+	   last_update_by)
+	values
+	  (sys_dept_s.nextval,
+	   trim(#{deptNameCN,jdbcType=VARCHAR}),
+	   trim(#{deptNameEN,jdbcType=VARCHAR}),
+	   trim(#{deptDesc,jdbcType=VARCHAR}),
+	   #{_parentId,jdbcType=NUMERIC},
+	   nvl(#{enableFlag,jdbcType=VARCHAR},'N'),
+	   #{currentUserId,jdbcType=NUMERIC},
+	   #{currentUserId,jdbcType=NUMERIC}
+	   )
+  </insert>
+  
+  <!--查询单个组织机构-->
+  <select id="findDept" resultType="org.btsoft.jf.security.dept.entity.DeptVO">
+  	   select 
+  	   t.dept_id      as deptId,
+  	   t.dept_name_cn as deptNameCN,
+       t.dept_name_en as deptNameEN,
+       t.parent_id    as "_parentId",
+       t.dept_desc    as deptDesc,
+       t.enable_flag  as enableFlag,
+       decode('zh_CN',#{currentLanguage,jdbcType=VARCHAR},p.dept_name_cn,p.dept_name_en) as parentDeptName
+  	from sys_dept_t t
+  	left join sys_dept_t p on p.dept_id=t.parent_id
+  	  where t.dept_id=#{deptId,jdbcType=NUMERIC}
+  </select>
+  
+  <!--更新组织机构-->
+  <update id="updateDept">
+  	  update sys_dept_t t 
+  	  set t.dept_name_cn=trim(#{deptNameCN,jdbcType=VARCHAR}),
+  	      t.dept_name_en=trim(#{deptNameEN,jdbcType=VARCHAR}),
+  	      t.dept_desc=trim(#{deptDesc,jdbcType=VARCHAR}),
+  	      t.enable_flag=nvl(#{enableFlag,jdbcType=VARCHAR},'N'),
+  	      t.parent_id=#{_parentId,jdbcType=NUMERIC},
+  	      t.last_update_by=#{currentUserId,jdbcType=NUMERIC},
+  	      t.last_updation_date=sysdate
+  	  where t.dept_id=#{deptId,jdbcType=NUMERIC}
+  </update>
+  
+  <!--删除组织机构-->
+  <delete id="deleteDept">
+  	 begin
+		<!-- 删除组织机构-->
+  		delete from sys_dept_t t where t.dept_id=#{deptId,jdbcType=NUMERIC};
+  	 end;
+  </delete>
+  
+</mapper>

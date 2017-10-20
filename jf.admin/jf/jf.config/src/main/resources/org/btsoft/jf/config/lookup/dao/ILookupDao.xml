@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.btsoft.jf.config.lookup.dao.ILookupDao">
+
+	<!-- 基本查询语句 -->
+	<sql id="base_sql">
+		select
+			t.code_id as codeId,
+			t.code_no as codeNo,
+			t.code_name as codeName,
+			t.code_type as codeType,
+			t.code_parent as codeParent,
+			t.code_desc as codeDesc,
+			t.enable_flag as enableFlag,
+			t.code_publish as codePublish,
+			t.last_updation_date as lastUpdationDate,
+			u.display_name as updateUserAccount
+		from
+			sys_lookup_t t
+		left join sys_user_t u ON u.user_id = t.last_update_by
+	</sql>
+	<!-- 基本条件语句 -->
+	<sql id="base_condition">
+		<trim prefix="where" prefixOverrides="and || or">
+			<if test="param1.queryParams!=null">
+				and trim(lower(t.code_no)) like
+				trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+			</if>
+		</trim>
+	</sql>
+	<!-- 分页查询语句 -->
+	<select id="findLookupList" resultType="org.btsoft.jf.config.lookup.entity.LookupVO">
+		<include refid="base_sql" />
+		<include refid="base_condition" />
+		order by t.code_id desc
+		limit #{1.startRow},#{1.pageSize}
+	</select>
+	<!-- 分页查询总数 -->
+	<select id="findLookupListCount" resultType="int">
+		select count(1) from sys_lookup_t t
+		<include refid="base_condition" />
+	</select>
+
+	<!-- 更新 -->
+	<update id="updateLookup">
+		update sys_lookup_t set
+			code_no = trim(#{codeNo,jdbcType=VARCHAR}),
+			code_name = trim(#{codeName,jdbcType=VARCHAR}),
+			code_type = #{codeType,jdbcType=VARCHAR},
+			code_parent = #{codeParent,jdbcType=VARCHAR},
+			code_desc   = trim(#{codeDesc,jdbcType=VARCHAR}),
+			enable_flag =#{enableFlag,jdbcType=VARCHAR},
+			code_publish =#{codePublish,jdbcType=VARCHAR},
+			last_update_by = #{currentUserId,jdbcType=NUMERIC},
+			last_updation_date = now()
+		where code_id = #{codeId,jdbcType=NUMERIC}
+	</update>
+
+	<!-- 插入 -->
+	<insert id="createLookup">
+		insert into sys_lookup_t
+			(code_no,
+			code_name,
+			code_type,
+			code_parent,
+			enable_flag,
+			code_publish,
+			create_by,
+			last_update_by,
+			code_desc)
+			values
+			(trim(#{codeNo,jdbcType=VARCHAR}),
+			trim(#{codeName,jdbcType=VARCHAR}),
+			trim(#{codeType,jdbcType=VARCHAR}),
+			trim(#{codeParent,jdbcType=VARCHAR}),
+			#{enableFlag,jdbcType=VARCHAR},
+			#{codePublish,jdbcType=VARCHAR},
+			#{currentUserId,jdbcType=NUMERIC},
+			#{currentUserId,jdbcType=NUMERIC},
+			trim(#{codeDesc,jdbcType=VARCHAR})
+		)
+	</insert>
+
+	<!-- 删除 -->
+	<delete id="deleteLookup">
+		delete from sys_lookup_t where
+			code_id=#{codeId,jdbcType=NUMERIC}
+	</delete>
+
+	<select id="findLookup" resultType="org.btsoft.jf.config.lookup.entity.LookupVO">
+		select
+			t.code_id AS codeId,
+			t.code_no AS codeNo,
+			t.code_name AS codeName,
+			t.code_type AS codeType,
+			t.code_parent AS codeParent,
+			t.code_desc AS codeDesc,
+			t.enable_flag AS enableFlag,
+			t.code_publish AS codePublish
+		from
+			sys_lookup_t t
+		where t.code_id=#{codeId,jdbcType=NUMERIC}
+	</select>
+</mapper>

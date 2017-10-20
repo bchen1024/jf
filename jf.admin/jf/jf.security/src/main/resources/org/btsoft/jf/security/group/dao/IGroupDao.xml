@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="org.btsoft.jf.security.group.dao.IGroupDao">
+
+  <!--插入-->
+  <insert id="createGroup">
+   		insert into sys_group_t
+		  (group_code,
+		   group_name,
+		   group_desc,
+		   group_owner,
+		   apply_status,
+		   create_by,
+		   last_update_by)
+		values
+		  (#{groupCode,jdbcType=VARCHAR}, 
+		   #{groupName,jdbcType=VARCHAR}, 
+		   #{groupDesc,jdbcType=VARCHAR},
+		   #{groupOwner,jdbcType=NUMERIC},
+		   ifnull(#{applyStatus,jdbcType=VARCHAR},'N'),
+		   #{currentUserId,jdbcType=NUMERIC},
+		   #{currentUserId,jdbcType=NUMERIC}
+		   )
+  </insert>
+  
+  <!-- 更新 -->
+  <update id="updateGroup">
+   		update sys_group_t
+		   set group_code         = #{groupCode,jdbcType=VARCHAR},
+		       group_name         = #{groupName,jdbcType=VARCHAR},
+		       group_desc         = #{groupDesc,jdbcType=VARCHAR},
+		       group_owner        = #{groupOwner,jdbcType=NUMERIC},
+		       apply_status       = ifnull(#{applyStatus,jdbcType=VARCHAR},'N'),
+		       last_update_by     = #{currentUserId,jdbcType=NUMERIC},
+		       last_updation_date = now()
+		 where group_id = #{groupId}
+  </update>
+  
+  <!-- 删除群组-->
+  <delete id="deleteGroup">
+ 	  	<!-- 删除群组表-->
+ 	  	delete from sys_group_t where group_id=#{groupId,jdbcType=NUMERIC}
+  </delete>
+  
+  <!--分页查询群组信息-->
+  <sql id="base_sql">
+  	  select 
+  	   g.group_id     as groupId,
+  	   g.group_code   as groupCode,
+       g.group_name   as groupName,
+       g.group_desc   as groupDesc,
+       g.group_owner  as groupOwner,
+       g.apply_status  as applyStatus,
+       u.display_name as updateUserAccount,
+       g.last_updation_date as lastUpdationDate,
+       ru.display_name as groupOwnerName
+     from sys_group_t g
+     left join sys_user_t u on u.user_id=g.last_update_by
+  	left join sys_user_t ru on ru.user_id=g.group_owner
+  </sql>
+  <sql id="base_condition">
+  	  <trim prefix="where" prefixOverrides="and || or">
+  	  	<if test="param1.queryParams!=null">
+			and (lower(g.group_name) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+				or lower(g.group_code) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+			)
+		</if>
+  	  	<if test="param1.groupCode!=null">
+	   	 	 and trim(lower(g.group_code)) like trim(lower('%'||#{0.groupCode,jdbcType=VARCHAR}||'%'))
+	   	  </if>
+	  	  <if test="param1.groupName!=null">
+	   	 	 and trim(lower(g.group_name)) like trim(lower('%'||#{0.groupName,jdbcType=VARCHAR}||'%'))
+	   	  </if>
+	   	  <if test="param1.groupDesc!=null">
+	   	 	 and trim(lower(g.group_desc)) like trim(lower('%'||#{0.groupDesc,jdbcType=VARCHAR}||'%'))
+	   	 </if>
+   	 </trim>
+  </sql>
+  <select id="findGroupList" resultType="org.btsoft.jf.security.group.entity.GroupVO">
+  		<include refid="base_sql"/>
+        <include refid="base_condition"/>
+        order by g.creation_date desc
+        limit #{1.startRow},#{1.pageSize}
+  </select>
+  
+  <select id="findGroupListCount" resultType="int">
+     select count(1) from sys_group_t g
+     <include refid="base_condition"/>
+  </select>
+  
+  <!--查询单个群组信息-->
+  <select id="findGroup" resultType="org.btsoft.jf.security.group.entity.GroupVO">
+  	  <include refid="base_sql"/>
+  	  where g.group_id=#{groupId,jdbcType=NUMERIC}
+  </select>
+  
+</mapper>

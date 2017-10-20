@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.btsoft.jf.config.personalized.dao.IPersonalizedDao">
+
+	<!-- 分页查询 -->
+	<sql id="base_sql">
+		select
+		t.personalized_id as personalizedId,
+		t.personalized_key as personalizedKey,
+		t.personalized_content as personalizedContent,
+		t.user_id as userId,
+		t.creation_date as creationDate,
+		u.display_name as createUserAccount
+		from sys_personalized_t t
+		left join sys_user_t u on u.user_id=t.create_by
+	</sql>
+	<sql id="base_condition">
+		<trim prefix="where" prefixOverrides="and || or">
+			t.enable_flag='Y'
+			<if test="param1.queryParams!=null">
+				and trim(lower(t.personalized_key)) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+			</if>
+		</trim>
+	</sql>
+	<select id="findPersonalizedList" resultType="org.btsoft.jf.config.personalized.entity.PersonalizedVO">
+		<include refid="base_sql" />
+		<include refid="base_condition" />
+		order by t.personalized_id desc
+		limit #{1.startRow},#{1.pageSize}
+	</select>
+	<select id="findPersonalizedListCount" resultType="int">
+		select count(1) from sys_personalized_t t
+		<include refid="base_condition" />
+	</select>
+	
+	<select id="findPersonalized" resultType="org.btsoft.jf.config.personalized.entity.PersonalizedVO">
+		select
+			t.personalized_key as personalizedKey,
+			t.personalized_content as personalizedContent
+		from sys_personalized_t t
+		where t.user_id=#{currentUserId,jdbcType=NUMERIC}
+		  and t.personalized_key=#{personalizedKey,jdbcType=VARCHAR}
+	</select>
+	
+	<delete id="deletePersonalized">
+		delete from sys_personalized_t where personalized_key=#{personalizedKey,jdbcType=VARCHAR} and user_id=#{currentUserId,jdbcType=NUMERIC}
+	</delete>
+	
+	<insert id="savePersonalized">
+		insert into sys_personalized_t
+			(
+			personalized_key,
+			personalized_content,
+			user_id,
+			create_by,
+			last_update_by)
+		values
+			(trim(#{personalizedKey,jdbcType=VARCHAR}),
+			trim(#{personalizedContent,jdbcType=VARCHAR}),
+			#{currentUserId,jdbcType=NUMERIC},
+			#{currentUserId,jdbcType=NUMERIC},
+			#{currentUserId,jdbcType=NUMERIC})
+	</insert>
+</mapper>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+	xmlns:soap="http://cxf.apache.org/bindings/soap"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://cxf.apache.org/bindings/soap 
+		http://cxf.apache.org/schemas/configuration/soap.xsd 
+		http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/jaxrs.xsd">
+	
+	<jaxrs:server id="jfConfigRest" address="/jf/config">
+		<jaxrs:serviceBeans>
+			<ref bean="attachmentService"/> 
+			<ref bean="htmlAreaService"/>
+			<ref bean="i18nService"/>
+			<ref bean="propertyService"/>
+			<ref bean="personalizedService"/>
+			<ref bean="siteMapService"/>
+			<ref bean="lookupService"/>
+			<ref bean="lookupItemService"/>
+			
+			<ref bean="excelFieldService"/>
+			<ref bean="excelSheetService"/>
+			<ref bean="excelTaskService"/>
+			<ref bean="excelTemplateService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:providers>
+			<ref bean="jsonProvider"/>
+			<ref bean="exceptionHander"/>
+		</jaxrs:providers>
+	</jaxrs:server>
+</beans>

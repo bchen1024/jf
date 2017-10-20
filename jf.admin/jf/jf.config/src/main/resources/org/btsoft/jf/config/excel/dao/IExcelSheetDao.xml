@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="org.btsoft.jf.config.excel.dao.IExcelSheetDao">
+
+  <select id="findExcelSheetList" resultType="org.btsoft.jf.config.excel.entity.ExcelSheetVO">
+  		select t.excel_sheet_id as excelSheetId,
+		       t.excel_template_id as excelTemplateId,
+		       t.sheet_name sheetName,
+		       t.sheet_index as sheetIndex,
+		       t.title_row as titleRow,
+		       t.data_row as dataRow,
+		       u.display_name       as updateUserAccount,
+		       t.last_updation_date as lastUpdationDate
+		  from sys_excel_sheet_t t
+		   left join sys_user_t u on u.user_id = t.last_update_by
+		   where t.excel_template_id=#{excelTemplateId,jdbcType=NUMERIC}
+		     and t.enable_flag='Y'
+  </select>
+  
+  <insert id="createExcelSheet">
+  	insert into sys_excel_sheet_t
+	  (excel_sheet_id,
+	   excel_template_id,
+	   sheet_name,
+	   sheet_index,
+	   title_row,
+	   data_row,
+	   enable_flag,
+	   create_by,
+	   creation_date,
+	   last_update_by,
+	   last_updation_date)
+	values
+	  (sys_excel_sheet_s.nextval,
+	   #{excelTemplateId,jdbcType=NUMERIC},
+	   #{sheetName,jdbcType=VARCHAR},
+	   #{sheetIndex,jdbcType=NUMERIC},
+	   #{titleRow,jdbcType=NUMERIC},
+	   #{dataRow,jdbcType=NUMERIC},
+	   #{enableFlag,jdbcType=VARCHAR},
+	   #{currentUserId,jdbcType=NUMERIC},
+	   sysdate,
+	   #{currentUserId,jdbcType=NUMERIC},
+	   sysdate)
+  </insert>
+  
+  <update id="updateExcelSheet">
+  	update sys_excel_sheet_t
+	   set sheet_name         = #{sheetName,jdbcType=VARCHAR},
+	       sheet_index        = #{sheetIndex,jdbcType=NUMERIC},
+	       title_row          = #{titleRow,jdbcType=NUMERIC},
+	       data_row           = #{dataRow,jdbcType=NUMERIC},
+	       enable_flag        = #{enableFlag,jdbcType=VARCHAR},
+	       last_update_by     = #{currentUserId,jdbcType=NUMERIC},
+	       last_updation_date = sysdate
+	 where excel_sheet_id = #{excelSheetId,jdbcType=NUMERIC}
+  </update>
+  
+  <select id="findExcelSheet" resultType="org.btsoft.jf.config.excel.entity.ExcelSheetVO">
+	  	select t.excel_sheet_id as excelSheetId,
+		       t.excel_template_id as excelTemplateId,
+		       t.sheet_name sheetName,
+		       t.sheet_index as sheetIndex,
+		       t.title_row as titleRow,
+		       t.data_row as dataRow
+		  from sys_excel_sheet_t t
+		  where t.excel_sheet_id = #{excelSheetId,jdbcType=NUMERIC}
+  </select>
+  
+  <delete id="deleteExcelSheet">
+  	delete sys_excel_sheet_t t where t.excel_sheet_id = #{excelSheetId,jdbcType=NUMERIC}
+  </delete>
+</mapper>

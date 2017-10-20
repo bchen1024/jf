@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="org.btsoft.jf.security.role.dao.IRoleDao">
+  
+  <!--分页条件查询角色start -->
+  <sql id="base_sql">
+  	  select 
+  	   t.role_id      as roleId,
+  	   t.role_code    as roleCode,
+       t.role_name    as roleName,
+       t.role_desc    as roleDesc,
+       t.apply_status as applyStatus,
+       t.role_owner   as roleOwner,
+       t.enable_flag  as enableFlag,
+       u.display_name as updateUserAccount,
+       t.last_updation_date as lastUpdationDate,
+       u.display_name as roleOwnerName
+  	from sys_role_t t
+  	left join sys_user_t u on u.user_id=t.last_update_by
+  	left join sys_user_t ru on ru.user_id=t.role_owner
+  </sql>
+  <sql id="base_condition">
+  	 <trim prefix="where" prefixOverrides="and || or">
+  	 	<if test="param1.queryParams!=null">
+			and (lower(t.role_name) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+				or lower(t.role_code) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+			)
+		</if>
+	  	 <if test="param1.roleName!=null">
+	   	 	and t.role_name like trim(lower('%'||#{0.roleName,jdbcType=VARCHAR}||'%'))
+	   	 </if>
+	   	 <if test="param1.roleCode!=null">
+	   	 	and t.role_code like trim(lower('%'||#{0.roleCode,jdbcType=VARCHAR}||'%'))
+	   	 </if>
+	   	 <if test="param1.applyStatus!=null">
+	   	 	and t.apply_status =#{0.applyStatus,jdbcType=VARCHAR}
+	   	 </if>
+	   	 <if test="param1.enableFlag!=null">
+	   	 	and t.enable_flag =#{0.enableFlag,jdbcType=VARCHAR}
+	   	 </if>
+	   	 <if test="param1.roleDesc!=null">
+	   	 	and t.role_desc like trim(lower('%'||#{0.roleDesc,jdbcType=VARCHAR}||'%'))
+	   	 </if>
+   	 </trim>
+  </sql>
+  <select id="findRoleList" resultType="org.btsoft.jf.security.role.entity.RoleVO">
+     <include refid="base_sql"/>
+     <include refid="base_condition"/>
+     order by t.creation_date desc
+     limit #{1.startRow},#{1.pageSize}
+  </select>
+  <select id="findRoleListCount" resultType="int">
+     select count(1) from sys_role_t t
+     <include refid="base_condition"/>
+  </select>
+  <!--分页条件查询角色end -->
+  
+  <!--插入角色-->
+  <insert id="createRole">
+  	  insert into sys_role_t
+	  (
+	   role_code,
+	   role_name,
+	   role_desc,
+	   apply_status,
+	   role_owner,
+	   enable_flag,
+	   create_by,
+	   last_update_by)
+	values
+	  (trim(#{roleCode,jdbcType=VARCHAR}),
+	   trim(#{roleName,jdbcType=VARCHAR}),
+	   trim(#{roleDesc,jdbcType=VARCHAR}),
+	   ifnull(#{applyStatus,jdbcType=VARCHAR},'N'),
+	   #{roleOwner,jdbcType=NUMERIC},
+	   ifnull(#{enableFlag,jdbcType=VARCHAR},'N'),
+	   #{currentUserId,jdbcType=NUMERIC},
+	   #{currentUserId,jdbcType=NUMERIC}
+	   )
+  </insert>
+  
+  <!--查询单个角色-->
+  <select id="findRole" resultType="org.btsoft.jf.security.role.entity.RoleVO">
+  	  <include refid="base_sql"/>
+  	  where t.role_id=#{roleId,jdbcType=NUMERIC}
+  </select>
+  
+  <!--更新角色-->
+  <update id="updateRole">
+  	  update sys_role_t t 
+  	  set t.role_code=trim(#{roleCode,jdbcType=VARCHAR}),
+  	  	  t.role_name=trim(#{roleName,jdbcType=VARCHAR}),
+  	      t.role_desc=trim(#{roleDesc,jdbcType=VARCHAR}),
+  	      t.role_owner=#{roleOwner,jdbcType=NUMERIC},
+  	      t.enable_flag=ifnull(#{enableFlag,jdbcType=VARCHAR},'N'),
+  	      t.apply_status=ifnull(#{applyStatus,jdbcType=VARCHAR},'N'),
+  	      t.last_update_by=#{currentUserId,jdbcType=NUMERIC},
+  	      t.last_updation_date=now()
+  	  where t.role_id=#{roleId,jdbcType=NUMERIC}
+  </update>
+  
+  <!--删除角色-->
+  <delete id="deleteRole">
+  		delete from sys_role_t  where role_id=#{roleId,jdbcType=NUMERIC}
+  </delete>
+  
+  <select id="findApplyRoleList" resultType="org.btsoft.jf.security.role.entity.RoleVO">
+        select t.role_id      as roleId,
+		       t.role_code    as roleCode,
+		       t.role_name    as roleName,
+		       t.role_desc    as roleDesc,
+		       t.role_owner   as roleOwner,
+		       u.display_name as roleOwnerName
+		  from sys_role_t t
+		  left join sys_user_t u on u.user_id = t.role_owner
+		 where t.enable_flag = 'Y'
+		   and t.apply_status = 'Y'
+		 order by t.role_code
+  </select>
+</mapper>

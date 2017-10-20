@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.btsoft.jf.config.sitemap.dao.ISiteMapDao">
+	<!--查询主sql -->
+	<select id="findSiteMapList" resultType="java.util.Map">
+		select 
+			t.sitemap_id   as "siteMapId",
+			t.sitemap_code as "siteMapCode",
+			case
+				when #{currentLanguage,jdbcType=VARCHAR}='zh_CN'
+				then t.sitemap_name_cn
+				else
+				t.sitemap_name_en
+			end            as "siteMapName",
+			t.sitemap_icon as "siteMapIcon",
+			t.sitemap_url  as "siteMapUrl",
+			ifnull(t.parent_id,0)    as "parentId"
+		from sys_sitemap_t t
+		order by t.sitemap_sort asc
+	</select>
+	
+	<select id="findSiteMap" resultType="org.btsoft.jf.config.sitemap.entity.SiteMapVO">
+		select 
+			t.sitemap_id      as siteMapId,
+			t.sitemap_code    as siteMapCode,
+			t.sitemap_name_cn as siteMapNameCN,
+			t.sitemap_name_en as siteMapNameEN,
+			t.sitemap_icon    as siteMapIcon,
+			t.sitemap_url     as siteMapUrl,
+			t.sitemap_sort    as siteMapSort,
+			t.sitemap_desc    as siteMapDesc,
+			t.show_type       as showType,
+			t.parent_id       as parentId,
+			t.permission_code as permissionCode,
+			t.enable_flag     as enableFlag
+		from sys_sitemap_t t
+		where t.sitemap_id=#{siteMapId,jdbcType=NUMERIC}
+	</select>
+
+	<!-- 创建菜单栏目 -->
+	<insert id="createSiteMap">
+		insert into sys_sitemap_t
+		(sitemap_code,
+		sitemap_name_cn,
+		sitemap_name_en,
+		sitemap_url,
+		sitemap_icon,
+		sitemap_sort,
+		sitemap_desc,
+		show_type,
+		permission_code,
+		parent_id,
+		app_code,
+		enable_flag,
+		create_by,
+		last_update_by)
+		values
+		(trim(#{siteMapCode,jdbcType=VARCHAR}),
+		trim(#{siteMapNameCN,jdbcType=VARCHAR}),
+		trim(#{siteMapNameEN,jdbcType=VARCHAR}),
+		trim(#{siteMapUrl,jdbcType=VARCHAR}),
+		trim(#{siteMapIcon,jdbcType=VARCHAR}),
+		trim(#{siteMapSort,jdbcType=NUMERIC}),
+		trim(#{siteMapDesc,jdbcType=VARCHAR}),
+		trim(#{showType,jdbcType=VARCHAR}),
+		trim(#{permissionCode,jdbcType=VARCHAR}),
+		#{parentId,jdbcType=NUMERIC},
+		'jfms',
+		ifnull(trim(#{enableFlag,jdbcType=VARCHAR}),'N'),
+		#{currentUserId,jdbcType=NUMERIC},
+		#{currentUserId,jdbcType=NUMERIC}
+		)
+	</insert>
+	
+	<update id="updateSiteMap">
+		update sys_sitemap_t t
+		set t.sitemap_code=   #{siteMapCode,jdbcType=VARCHAR},
+			t.sitemap_name_cn=#{siteMapNameCN,jdbcType=VARCHAR},
+			t.sitemap_name_en=#{siteMapNameEN,jdbcType=VARCHAR},
+			t.parent_id=      #{parentId,jdbcType=NUMERIC},
+			t.sitemap_icon=   #{siteMapIcon,jdbcType=VARCHAR},
+			t.show_type      =#{showType,jdbcType=VARCHAR},
+			t.permission_code=#{permissionCode,jdbcType=VARCHAR},
+			t.sitemap_sort   =#{siteMapSort,jdbcType=NUMERIC},
+			t.enable_flag    =#{enableFlag,jdbcType=VARCHAR},
+			t.sitemap_url    =#{siteMapUrl,jdbcType=VARCHAR},
+			t.sitemap_desc   =#{siteMapDesc,jdbcType=VARCHAR},
+			t.last_update_by =#{currentUserId,jdbcType=NUMERIC},
+		    t.last_updation_date = now()
+		where t.sitemap_id=#{siteMapId,jdbcType=NUMERIC}
+	</update>
+	
+	<delete id="deleteSiteMap">
+		delete from sys_sitemap_t where sitemap_id=#{siteMapId,jdbcType=NUMERIC}
+	</delete>
+
+	<select id="findParentSiteMap" resultType="org.btsoft.jf.config.sitemap.entity.SiteMapVO">
+		select 
+			t.sitemap_id   as "siteMapId",
+			case
+				when #{currentLanguage,jdbcType=VARCHAR}='zh_CN'
+				then t.sitemap_name_cn
+				else
+				t.sitemap_name_en
+			end            as "siteMapName"
+		from sys_sitemap_t t
+		where t.parent_id is null
+		order by t.sitemap_sort asc
+	</select>
+	
+	<select id="findSiteMapRouters" resultType="org.btsoft.jf.config.sitemap.entity.SiteMapVO">
+	    select 
+			t.sitemap_id   as siteMapId,
+			case
+				when #{currentLanguage,jdbcType=VARCHAR}='zh_CN'
+				then t.sitemap_name_cn
+				else
+				t.sitemap_name_en
+			end            as siteMapName,
+			t.sitemap_url  as siteMapUrl
+		from sys_sitemap_t t
+		where t.sitemap_url is not null
+	</select>
+</mapper>

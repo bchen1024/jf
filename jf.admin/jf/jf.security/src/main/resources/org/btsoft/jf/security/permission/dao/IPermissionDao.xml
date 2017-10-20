@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="org.btsoft.jf.security.permission.dao.IPermissionDao">
+    
+    <sql id="base_sql">
+  	  select 
+	  	   t.permission_id      as permissionId,
+	       t.permission_code    as permissionCode,
+	       t.permission_desc_cn as permissionDescCN,
+	       t.permission_desc_en as permissionDescEN,
+	       decode(#{currentLanguage,jdbcType=VARCHAR},'zh_CN',t.permission_desc_cn,t.permission_desc_en) as permissionDesc,
+	       t.permission_type    as permissionType,
+	       t.permission_source  as permissionSource,
+           <if test="permissionType=='method'">
+           null                 as "_parentId",
+           </if>
+           <if test="permissionType!='method'">
+           t.parent_id          as "_parentId",
+           </if>
+           t.enable_flag        as enableFlag,
+	       t.permission_url     as permissionUrl,
+	       t.creation_date as creationDate,
+	       t.last_updation_date as lastUpdationDate,
+	       c.display_name as createUserAccount,
+	       u.display_name       as updateUserAccount
+  	  from sys_permission_t t
+  	  left join sys_user_t c on c.user_id = t.create_by
+  	  left join sys_user_t u on u.user_id=t.last_update_by
+  </sql>
+  <select id="findPermissionList" resultType="org.btsoft.jf.security.permission.entity.PermissionVO">
+  		<include refid="base_sql"/>
+  		<trim prefix="where" prefixOverrides="and || or">
+	  		<if test="permissionCode!=null">
+			     and lower(t.permission_code) like '%'||lower(#{permissionCode,jdbcType=VARCHAR})||'%'
+		    </if>
+		    <if test="permissionDescCN!=null">
+			     and lower(t.permission_desc_cn) like '%'||lower(#{permissionDescCN,jdbcType=VARCHAR})||'%'
+		    </if>
+		    <if test="permissionDescEN!=null">
+			     and lower(t.permission_desc_en) like '%'||lower(#{permissionDescEN,jdbcType=VARCHAR})||'%'
+		    </if>
+		    <if test="permissionType!=null">
+		    	 and t.permission_type=#{permissionType,jdbcType=VARCHAR}
+		    </if>
+		     <if test="enableFlag!=null">
+		    	 and t.enable_flag=#{enableFlag,jdbcType=VARCHAR}
+		    </if>
+		    <if test="permissionUrl!=null">
+		    	 and lower(t.permission_url) like '%'||lower(#{permissionUrl,jdbcType=VARCHAR})||'%'
+		    </if>
+  		</trim>
+  		order by t.permission_desc_en
+  </select>
+  
+  <!--创建权限点-->
+  <insert id="createPermission">
+  	insert into sys_permission_t
+	  (permission_id,
+	   permission_code,
+	   permission_desc_cn,
+	   permission_desc_en,
+	   permission_type,
+	   create_by,
+	   last_update_by,
+	   parent_id,
+	   permission_url,
+	   permission_source)
+	values
+	  (sys_permission_s.nextval,
+	   trim(#{permissionCode,jdbcType=VARCHAR}),
+	   trim(#{permissionDescCN,jdbcType=VARCHAR}),
+	   trim(#{permissionDescEN,jdbcType=VARCHAR}),
+	   trim(#{permissionType,jdbcType=VARCHAR}),
+	   #{currentUserId,jdbcType=NUMERIC},
+	   #{currentUserId,jdbcType=NUMERIC},
+	   #{_parentId,jdbcType=NUMERIC},
+	   trim(#{permissionUrl,jdbcType=VARCHAR}),
+	   trim(#{permissionSource,jdbcType=VARCHAR})
+	   )
+  </insert>
+  
+  <!--根据权限点编号获取权限点信息  -->
+   <select id="findPermission" resultType="org.btsoft.jf.security.permission.entity.PermissionVO">
+  	 select 
+  	 	   t.permission_id      as permissionId,
+	       t.permission_code    as permissionCode,
+	       t.permission_desc_cn as permissionDescCN,
+	       t.permission_desc_en as permissionDescEN,
+	       t.permission_type    as permissionType,
+	       t.parent_id          as "_parentId",
+	       t.permission_url     as permissionUrl,
+	       decode('zh_CN',#{currentLanguage,jdbcType=VARCHAR},p.permission_desc_cn,p.permission_desc_en) as parentPermissionName
+	  from sys_permission_t t
+	  left join sys_permission_t p on t.parent_id=p.permission_id
+	 where t.permission_id =#{permissionId,jdbcType=NUMERIC}
+  </select>
+  
+  <!-- 更新权限点信息 -->
+  <update id="updatePermission">
+	update sys_permission_t
+	   set permission_code =  trim(#{permissionCode,jdbcType=VARCHAR}), 
+	       permission_desc_cn =  trim(#{permissionDescCN,jdbcType=VARCHAR}),
+	       permission_desc_en =  trim(#{permissionDescEN,jdbcType=VARCHAR}),
+	       permission_type    =  trim(#{permissionType,jdbcType=VARCHAR}),
+	       last_update_by     = #{currentUserId,jdbcType=NUMERIC},
+	       last_updation_date = sysdate,
+	       parent_id          = #{_parentId,jdbcType=NUMERIC},
+	       permission_url     = trim(#{permissionUrl,jdbcType=VARCHAR})
+	 where permission_id = #{permissionId,jdbcType=NUMERIC}
+  </update>
+  
+   <!-- 删除权限点信息 -->
+  <delete id="deletePermission">
+      begin
+  	      delete from sys_permission_t t where t.permission_id = #{permissionId,jdbcType=NUMERIC};
+  	      update sys_permission_t t 
+  	      	set t.parent_id=null
+  	      where t.parent_id = #{permissionId,jdbcType=NUMERIC};
+  	  end;
+  </delete>
+  
+  <select id="batchSavePermission">
+  		 declare
+  		 v_permissionId number;
+  		 begin
+	  	   	<foreach collection="list" item="item">
+	  	  		select  nvl(max(t.permission_id),0) into v_permissionId from sys_permission_t t where 
+	  	  			t.permission_code=#{item.permissionCode,jdbcType=VARCHAR} 
+	  	  		<if test="item.permissionType=='method' and item._parentId==null">
+	  	  			and t.parent_id is null
+	  	  		</if>
+	  	  	    <if test="item.permissionType=='method' and item._parentId!=null">
+	  	  			and t.parent_id=#{item._parentId,jdbcType=NUMERIC}
+	  	  		</if>
+	  	  		and t.permission_type=#{item.permissionType,jdbcType=VARCHAR};
+	  	  		
+	  	  		if v_permissionId =0 then
+	  	  			insert into sys_permission_t
+					  (permission_id,
+					   permission_code,
+					   permission_desc_cn,
+					   permission_desc_en,
+					   permission_type,
+					   permission_source,
+					   create_by,
+					   last_update_by,
+					   parent_id)
+					values
+					  (sys_permission_s.nextval,
+					   trim(#{item.permissionCode,jdbcType=VARCHAR}),
+					   trim(#{item.permissionDescCN,jdbcType=VARCHAR}),
+					   trim(#{item.permissionDescEN,jdbcType=VARCHAR}),
+					   trim(#{item.permissionType,jdbcType=VARCHAR}),
+					   'annotation',
+					   #{item.currentUserId,jdbcType=NUMERIC},
+					   #{item.currentUserId,jdbcType=NUMERIC},
+					   #{item._parentId,jdbcType=NUMERIC}
+					   );
+	  	  		else
+	  	  			update sys_permission_t
+					   set permission_desc_cn =  trim(#{item.permissionDescCN,jdbcType=VARCHAR}),
+					       permission_desc_en =  trim(#{item.permissionDescEN,jdbcType=VARCHAR}),
+					       permission_source  = 'annotation',
+					       last_update_by     = #{item.currentUserId,jdbcType=NUMERIC},
+					       last_updation_date = sysdate,
+					       parent_id          = #{item._parentId,jdbcType=NUMERIC},
+					       enable_flag='Y'
+					 where permission_id =v_permissionId
+					 and (permission_desc_cn !=  trim(#{item.permissionDescCN,jdbcType=VARCHAR}) or
+					      permission_desc_en !=  trim(#{item.permissionDescEN,jdbcType=VARCHAR}) or
+					      permission_source!='annotation' or
+					      enable_flag='N'
+					      );
+	  	  		end if;
+	  	  	</foreach>
+  		end;
+  </select>
+  
+  
+  <select id="findPermissionIdByCode" resultType="java.util.Map">
+  		select t.permission_code as "permissionCode",
+  			   t.permission_id   as "permissionId"
+  		from sys_permission_t t
+  		where t.permission_type='resource'
+  		<foreach collection="list" item="item" open="and t.permission_code in(" separator="," close=")">
+  			#{item.permissionCode,jdbcType=VARCHAR}
+  		</foreach>
+  </select>
+  
+  <update id="inValidPermission">
+      update sys_permission_t t
+          set t.enable_flag='N',
+              t.last_update_by     = #{currentUserId,jdbcType=NUMERIC},
+			  t.last_updation_date = sysdate
+		where t.permission_source='annotation'
+		  and t.enable_flag='Y'
+          and t.permission_type=#{permissionType,jdbcType=VARCHAR}
+          <if test="permissionType=='method'">
+              <foreach collection="permissionList" item="item" open="and (t.permission_code,t.parent_id) not in(" separator="," close=")">
+  			      (#{item.permissionCode,jdbcType=VARCHAR},#{item._parentId,jdbcType=NUMERIC})
+  		      </foreach>
+          </if>
+          <if test="permissionType=='resource'">
+          	  <foreach collection="permissionList" item="item" open="and t.permission_code not in(" separator="," close=")">
+  			      #{item.permissionCode,jdbcType=VARCHAR}
+  		      </foreach>
+          </if>
+  </update>
+  
+  <delete id="deleteInValidPermission">
+      begin
+          delete from sys_permission_t t
+          where t.enable_flag='N';
+          
+          delete from sys_relation_rt r
+          where r.relation_type='role-permission'
+            and not exists(
+          	    select 1 from sys_permission_t t where r.relation_id=t.permission_id
+            );
+            
+          update sys_permission_t t
+		     set t.parent_id = null,
+		         t.last_update_by     = #{currentUserId,jdbcType=NUMERIC},
+			     t.last_updation_date = sysdate
+		  where not exists
+		  (select 1 from sys_permission_t p where p.permission_id = t.parent_id)
+		   and t.parent_id is not null;
+      end;
+  </delete>
+</mapper>
