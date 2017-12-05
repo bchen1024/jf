@@ -1,29 +1,32 @@
 <template>
     <div>
         <!--操作按钮行，搜索框-->
-        <div style="margin-bottom:6px;height:36px;">
-            <Input v-model="grid.queryParams.queryKey"  :placeholder="$t('personalized.queryTip')" style="width: 360px;float:right">
-                <Button slot="append" icon="ios-search"  @click="loadTable()"></Button>
-            </Input>
-        </div>
+        <Row class="row-operater">
+            <Col span="6" offset="18">
+                <Input v-model="grid.queryParams.queryParams" 
+                       icon="ios-search" 
+                       autofocus
+                       @on-enter="loadTable()" 
+                       @on-click="loadTable()" 
+                       :placeholder="$t('personalized.queryTip')">
+                </Input>
+            </Col>
+        </Row>
         <!--Table列表-->
         <Table border stripe size="small" 
             :columns="grid.columns" :data="grid.result" 
-            :no-data-text="grid.noDataMessage">
+            :no-data-text="grid.noDataMessage" :loading="grid.loading">
         </Table>
         <!--分页-->
-        <div style="margin: 5px;overflow: hidden">
-            <div style="float:right">
-                <Page @on-change="onChange"  
-                    @on-page-size-change="onPageSizeChange"
-                    :total="grid.page.total" 
-                    :page-size="grid.page.pageSize" 
-                    :current="grid.page.curPage" 
-                    size="small"
-                    placement="top" show-elevator show-sizer show-total>
-                </Page>
-            </div>
-        </div>
+        <Page @on-change="onChange"
+            @on-page-size-change="onPageSizeChange"
+            :total="grid.page.total" 
+            :page-size="grid.page.pageSize" 
+            :current="grid.page.curPage" 
+            size="small"
+            placement="top" show-elevator show-sizer show-total
+            class="table-pager">
+        </Page>
     </div>
 </template>
 <script>

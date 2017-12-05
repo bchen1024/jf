@@ -1,6 +1,16 @@
 export default {
     'zh_CN': {
         common:{
+            checkLogin:'检查登录中',
+            appName:'JF集成平台',
+            loginTitle:'登录',
+            accountNotNull:'账号不能为空',
+            passwordNotNull:'密码不能为空',
+            loginAccount:'账号、邮箱、手机号码',
+            loginPassword:'登录密码',
+            forgetPassword:'忘记密码',
+            login:'登录',
+            logout:'注销',
             add:'添加',
             update:'修改',
             edit:'编辑',
@@ -37,7 +47,6 @@ export default {
             yes:'是',
             no:'否',
             addEdit:'添加 & 编辑',
-            publish:'发布',
             noPublish:'不发布',
             saveSuccessful:'保存成功!',
             deleteSuccessful:'删除成功!',
@@ -62,6 +71,7 @@ export default {
             cost:'耗时',
             applyStatus:'申请状态',
             owner:'责任人',
+            personal:'个人中心'
         },
         property:{
             key:'字典键',
@@ -76,7 +86,7 @@ export default {
             exists:'存在',
             uploader:'上传人',
             uploadDate:'上传时间',
-            queryTip:"请输入附件名称"
+            queryTip:'请输入附件名称'
         },
         service:{
             rest:'Rest服务',
@@ -183,16 +193,30 @@ export default {
         group:{
             code:'群组编码',
             name:'群组名称',
-            queryTip:"请输入群组编码",
+            queryTip:'请输入群组编码',
             users:'用户',
             roles:'角色'
         },
         excel:{
             fileRows:'文件行数'
+        },
+        user:{
+            account:'帐号',
+            name:'名称',
+            email:'邮箱'
         }
     },
     'en_US': {
         common:{
+            loginTitle:'Login',
+            loginAccount:'Account、Phone、Email',
+            loginPassword:'Password',
+            login:'Login',
+            accountNotNull:'The account cannot be empty',
+            passwordNotNull:'The password can not be empty',
+            forgetPassword:'Forget Password',
+            logout:'Logout',
+            appName:'JF integrated Platform',
             add:'Add',
             update:'Update',
             edit:'Edit',
@@ -229,7 +253,6 @@ export default {
             yes:'Yes',
             no:'No',
             addEdit:'Add & Edit',
-            publish:'Publish',
             noPublish:'No Publish',
             saveSuccessful:'Save Successful!',
             deleteSuccessful:'Delete Successful!',
@@ -254,6 +277,7 @@ export default {
             cost:'Cost',
             applyStatus:'Apply Status',
             owner:'Owner',
+            personal:'Personal'
         },
         property:{
             key:'Property Key',
@@ -368,7 +392,7 @@ export default {
         group:{
             code:'Group Code',
             name:'Group Name',
-            queryTip:"Please enter a group code",
+            queryTip:'Please enter a group code',
             users:'Users',
             roles:'Roles'
         },

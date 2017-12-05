@@ -1,54 +1,61 @@
 <template>
     <div>
         <!--操作按钮行，搜索框-->
-        <div style="margin-bottom:6px;">
-            <!--添加-->
-            <Button type="primary" icon="plus" @click="showModal('add')">{{$t('common.add')}}</Button>
-            <!--清除缓存-->
-            <Button type="primary" icon="refresh" :loading="clearCacheLoading" @click="clearCache">{{$t('common.clearCache')}}</Button>
-            <!--导入导出操作-->
-            <Dropdown>
-                <Button type="primary">
-                    {{$t('common.importOrExport')}}
-                    <Icon type="arrow-down-b"></Icon>
-                </Button>
-                <Dropdown-menu slot="list">
-                    <Dropdown-item :disabled="exportSelection">{{$t('common.exportSelectedItems')}}</Dropdown-item>
-                    <Dropdown-item>{{$t('common.exportByCondition')}}</Dropdown-item>
-                    <Dropdown-item>{{$t('common.import')}}</Dropdown-item>
-                    <Dropdown-item>{{$t('common.importIgnoreExists')}}</Dropdown-item>
-                    <Dropdown-item>{{$t('common.downloadImportTemplate')}}</Dropdown-item>
-                </Dropdown-menu>
-            </Dropdown>
-            <Input v-model="grid.queryParams.queryParams" :placeholder="$t('htmlarea.queryTip')" style="width: 360px;float:right">
-                <Button slot="append" icon="ios-search"  @click="loadTable()"></Button>
-            </Input>
-        </div>
+        <Row class="row-operater">
+            <Col span="18">
+                <!--添加-->
+                <Button type="primary" icon="plus" @click="showModal('add')">{{$t('common.add')}}</Button>
+                <!--清除缓存-->
+                <Button type="primary" icon="refresh" :loading="clearCacheLoading" @click="clearCache">{{$t('common.clearCache')}}</Button>
+                <!--导入导出操作-->
+                <Dropdown @on-click="dropdownClick">
+                    <Button type="primary">
+                        {{$t('common.importOrExport')}}
+                        <Icon type="arrow-down-b"></Icon>
+                    </Button>
+                    <Dropdown-menu slot="list">
+                        <Dropdown-item name="exportSelectedItems" :disabled="exportSelection">{{$t('common.exportSelectedItems')}}</Dropdown-item>
+                        <Dropdown-item name="exportByCondition">{{$t('common.exportByCondition')}}</Dropdown-item>
+                        <Dropdown-item name="import">{{$t('common.import')}}</Dropdown-item>
+                         <Upload action="uploadUrl"
+                            :show-upload-list="false"
+                            :format="['xlsx']"
+                        >
+                            <Dropdown-item name="importIgnoreExists">{{$t('common.importIgnoreExists')}}</Dropdown-item>
+                        </Upload>
+                        <Dropdown-item name="downloadTemplate">{{$t('common.downloadImportTemplate')}}</Dropdown-item>
+                    </Dropdown-menu>
+                </Dropdown>
+            </Col>
+            <Col span="6">
+                <Input v-model="grid.queryParams.queryParams" 
+                       icon="ios-search" 
+                       autofocus
+                       @on-enter="loadTable()" 
+                       @on-click="loadTable()" 
+                       :placeholder="$t('htmlarea.queryTip')">
+                </Input>
+            </Col>
+        </Row>
         <!--Table列表-->
-        <Table height="400" border stripe size="small" 
+        <Table height="433" border stripe size="small" 
             :columns="grid.columns" :data="grid.result" 
             :no-data-text="grid.noDataMessage"
-            @on-selection-change="selectionChange">
+            @on-selection-change="selectionChange"
+            :loading="grid.loading">
         </Table>
         <!--分页-->
-        <div style="margin: 5px;overflow: hidden">
-            <div style="float:right">
-                <Page @on-change="onChange"  
-                    @on-page-size-change="onPageSizeChange"
-                    :total="grid.page.total" 
-                    :page-size="grid.page.pageSize" 
-                    :current="grid.page.curPage" 
-                    size="small"
-                    placement="top" show-elevator show-sizer show-total>
-                </Page>
-            </div>
-        </div>
+        <Page @on-change="onChange"
+            @on-page-size-change="onPageSizeChange"
+            :total="grid.page.total" 
+            :page-size="grid.page.pageSize" 
+            :current="grid.page.curPage" 
+            size="small"
+            placement="top" show-elevator show-sizer show-total
+            class="table-pager">
+        </Page>
         <!--删除确认Modal-->
-        <Modal v-model="grid.deleteModal" width="360">
-            <p slot="header" style="color:#f60;text-align:center">
-                <Icon type="information-circled"></Icon>
-                <span>{{$t('common.deleteConfirm')}}</span>
-            </p>
+        <Modal v-model="grid.deleteModal" width="360" :title="$t('common.deleteConfirm')">
             <div style="text-align:center">
                 <p>{{$t('common.deleteConfirmMsg')}}</p>
             </div>
@@ -57,9 +64,7 @@
             </div>
         </Modal>
         <!--添加编辑Modal-->
-        <Modal v-model="grid.addOrEditModal" width="860" 
-            :title="$t('common.addEdit')"
-        >
+        <Modal v-model="grid.addOrEditModal" width="860"  :title="$t('common.addEdit')">
             <Form ref="formMain" :model="grid.formValidate" :rules="grid.ruleValidate" :label-width="110">
                 <Row>
                     <Col span="12">
@@ -162,7 +167,7 @@
                     addOrEditModal:false,
                     //是否正在保存中
                     saveLoading:false,
-                        formValidate: {
+                    formValidate: {
                         enableFlag: 'Y'
                     },
                     ruleValidate: {
@@ -264,6 +269,14 @@
                 Util.get("services/jf/config/lookupItem/find/lookupItems/htmlarea_type",null,function(result){
                     vue.grid.htmlAreaTypes=result;
                 })
+            },
+            dropdownClick(name){
+                if(name=="downloadTemplate"){
+                    this.downloadTemplate();
+                }
+            },
+            downloadTemplate(){
+                this.$Message.info("下载导入模板");
             }
         },
         created(){

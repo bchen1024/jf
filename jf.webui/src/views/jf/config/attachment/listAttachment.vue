@@ -1,37 +1,40 @@
 <template>
     <div>
         <!--操作按钮行，搜索框-->
-        <div style="margin-bottom:6px;">
-            <div style="display:inline-block;">
+        <Row class="row-operater">
+            <Col span="18">
                 <Upload :action="uploadUrl"
                     :show-upload-list="false"
                     :on-success="uploadSuccess"
                 >
-                    <Button type="ghost" icon="upload">{{$t('common.upload')}}</Button>
+                    <Button icon="ios-cloud-upload">{{$t('common.upload')}}</Button>
                 </Upload>
-             </div>
-            <Input v-model="grid.queryParams.queryParams" :placeholder="$t('attachment.queryTip')" style="width: 360px;float:right">
-                <Button slot="append" icon="ios-search"  @click="loadTable()"></Button>
-            </Input>
-        </div>
+            </Col>
+            <Col span="6">
+                <Input v-model="grid.queryParams.queryParams" 
+                       icon="ios-search" 
+                       autofocus
+                       @on-enter="loadTable()" 
+                       @on-click="loadTable()" 
+                       :placeholder="$t('attachment.queryTip')">
+                </Input>
+            </Col>
+        </Row>
         <!--Table列表-->
-        <Table border stripe size="small" 
+        <Table border stripe size="small"
             :columns="grid.columns" :data="grid.result" 
-            :no-data-text="grid.noDataMessage">
+            :no-data-text="grid.noDataMessage" :loading="grid.loading">
         </Table>
         <!--分页-->
-        <div style="margin: 5px;overflow: hidden">
-            <div style="float:right">
-                <Page @on-change="onChange"
-                    @on-page-size-change="onPageSizeChange"
-                    :total="grid.page.total" 
-                    :page-size="grid.page.pageSize" 
-                    :current="grid.page.curPage" 
-                    size="small"
-                    placement="top" show-elevator show-sizer show-total>
-                </Page>
-            </div>
-        </div>
+        <Page @on-change="onChange"
+            @on-page-size-change="onPageSizeChange"
+            :total="grid.page.total" 
+            :page-size="grid.page.pageSize" 
+            :current="grid.page.curPage" 
+            size="small"
+            placement="top" show-elevator show-sizer show-total
+            class="table-pager">
+        </Page>
     </div>
 </template>
 <script>

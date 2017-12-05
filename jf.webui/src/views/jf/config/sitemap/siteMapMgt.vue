@@ -1,6 +1,6 @@
 <template>
     <div>
-        <Menu class="layout-menu" mode="horizontal" theme="primary" active-name="1" @on-select="onSelect">
+        <Menu class="layout-menu" style='z-index:10;' mode="horizontal" theme="primary" active-name="1" @on-select="onSelect">
             <div v-for="menu in menus" :key="menu.siteMapCode">
                 <Submenu v-if="menu.children" :key="menu.siteMapCode" :name="menu.siteMapId">
                     <template slot="title">

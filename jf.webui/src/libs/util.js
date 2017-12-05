@@ -1,5 +1,8 @@
 
 import Config from '../config/config.js';
+import Vue from 'vue';
+import zhLocale from 'iview/src/locale/lang/zh-CN';
+import enLocale from 'iview/src/locale/lang/en-US';
 let util = {
 
 };
@@ -137,10 +140,11 @@ util.fetch=function(url,params,options,successCallback,failCallback){
         headers:{
             "Accept":"application/json",
             "Content-type":"application/json",
-            "currentLanguage":localStorage.getItem("currentLanguage")||'zh_CN'
+            "currentLanguage":localStorage.getItem("currentLanguage")||'zh_CN',
+            'Authorization':sessionStorage.token
         }
     };
-    let baseUrl="http://127.0.0.1:8888/jf/";
+    let baseUrl=Config.serviceUrl;
     let realUrl=baseUrl+url;
     let op=Object.assign({},defaultOp,options);
     if(op.method=="GET"){
@@ -165,8 +169,14 @@ util.fetch=function(url,params,options,successCallback,failCallback){
         return resp.json();
     }).then(function(result){
         if(result.httpCode){
-            failCallback && failCallback.call(this,result);
-            console.error(JSON.stringify(result));
+            if(failCallback){
+                failCallback.call(this,result);
+            }else{
+                Vue.$Modal.error({
+                    title: 'Error',
+                    content: result.message
+                });
+            }
         }else{
             successCallback && successCallback.call(this,result);
         }
@@ -194,17 +204,13 @@ util.loadGrid=function(vue,grid,url,successCallback,failCallback){
     //构造查询参数
     let params=Object.assign({},JSON.parse(JSON.stringify(vue[grid].queryParams)),
         {curPage:vue[grid].page.curPage,pageSize:vue[grid].page.pageSize});
-    //指定默认的提示信息
-    vue[grid].noDataMessage=vue.$t('common.loading');
-    //默认加载中
-    const loading=vue.$Message.loading({
-        content: vue.$t('common.loading'),
-        duration: 0
-    });
+    //指定默认加载中
+    vue[grid].loading=true;
     //清空表格数据
     vue[grid].result=[];
     //请求服务查询数据
     util.get(url,params,function(result){
+        vue[grid].loading=false;
         if(successCallback){//自定义的成功回调函数
             successCallback.call(this,result);
         }else{//默认的成功执行过程
@@ -216,14 +222,12 @@ util.loadGrid=function(vue,grid,url,successCallback,failCallback){
             if(!result.result || result.result.length==0){
                 vue[grid].noDataMessage=vue.$t('common.noData');
             }
-            setTimeout(loading,1);
         }
     },function(error){
+        vue[grid].loading=false;
         if(failCallback){//自定义的错误回调
-            setTimeout(loading,1);
             failCallback.call(this,error);
         }else{//默认的错误回调
-            setTimeout(loading,1);
             vue[grid].noDataMessage=vue.$t('common.loadError')+error.message;
         }
     });
