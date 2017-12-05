@@ -120,62 +120,37 @@
   	  end;
   </delete>
   
-  <select id="batchSavePermission">
-  		 declare
-  		 v_permissionId number;
-  		 begin
-	  	   	<foreach collection="list" item="item">
-	  	  		select  nvl(max(t.permission_id),0) into v_permissionId from sys_permission_t t where 
-	  	  			t.permission_code=#{item.permissionCode,jdbcType=VARCHAR} 
-	  	  		<if test="item.permissionType=='method' and item._parentId==null">
-	  	  			and t.parent_id is null
-	  	  		</if>
-	  	  	    <if test="item.permissionType=='method' and item._parentId!=null">
-	  	  			and t.parent_id=#{item._parentId,jdbcType=NUMERIC}
-	  	  		</if>
-	  	  		and t.permission_type=#{item.permissionType,jdbcType=VARCHAR};
-	  	  		
-	  	  		if v_permissionId =0 then
-	  	  			insert into sys_permission_t
-					  (permission_id,
-					   permission_code,
-					   permission_desc_cn,
-					   permission_desc_en,
-					   permission_type,
-					   permission_source,
-					   create_by,
-					   last_update_by,
-					   parent_id)
-					values
-					  (sys_permission_s.nextval,
-					   trim(#{item.permissionCode,jdbcType=VARCHAR}),
-					   trim(#{item.permissionDescCN,jdbcType=VARCHAR}),
-					   trim(#{item.permissionDescEN,jdbcType=VARCHAR}),
-					   trim(#{item.permissionType,jdbcType=VARCHAR}),
-					   'annotation',
-					   #{item.currentUserId,jdbcType=NUMERIC},
-					   #{item.currentUserId,jdbcType=NUMERIC},
-					   #{item._parentId,jdbcType=NUMERIC}
-					   );
-	  	  		else
-	  	  			update sys_permission_t
-					   set permission_desc_cn =  trim(#{item.permissionDescCN,jdbcType=VARCHAR}),
-					       permission_desc_en =  trim(#{item.permissionDescEN,jdbcType=VARCHAR}),
-					       permission_source  = 'annotation',
-					       last_update_by     = #{item.currentUserId,jdbcType=NUMERIC},
-					       last_updation_date = sysdate,
-					       parent_id          = #{item._parentId,jdbcType=NUMERIC},
-					       enable_flag='Y'
-					 where permission_id =v_permissionId
-					 and (permission_desc_cn !=  trim(#{item.permissionDescCN,jdbcType=VARCHAR}) or
-					      permission_desc_en !=  trim(#{item.permissionDescEN,jdbcType=VARCHAR}) or
-					      permission_source!='annotation' or
-					      enable_flag='N'
-					      );
-	  	  		end if;
+	<insert  id="batchSavePermission">
+		<foreach collection="list" item="item">
+	  	  INSERT INTO sys_permission_t (
+			permission_code,
+			permission_desc_cn,
+			permission_desc_en,
+			permission_type,
+			parent_code,
+			permission_source,
+			create_by,
+			last_update_by
+		)
+		VALUES
+			(
+				#{item.permissionCode,jdbcType=VARCHAR},
+				#{item.permissionDescCN,jdbcType=VARCHAR},
+				#{item.permissionDescEN,jdbcType=VARCHAR},
+				#{item.permissionType,jdbcType=VARCHAR},
+				ifnull(#{item.parentCode,jdbcType=VARCHAR},'-1'),
+				'annotation' ,
+				#{item.currentUserId,jdbcType=NUMERIC},
+				#{item.currentUserId,jdbcType=NUMERIC}
+			) ON DUPLICATE KEY UPDATE
+				permission_desc_cn = #{item.permissionDescCN,jdbcType=VARCHAR},
+				permission_desc_en = #{item.permissionDescEN,jdbcType=VARCHAR},
+				permission_type = #{item.permissionType,jdbcType=VARCHAR},
+				permission_source='annotation',
+				last_update_by =#{item.currentUserId,jdbcType=NUMERIC},
+				last_updation_date = now();
 	  	  	</foreach>
-  		end;
-  </select>
+	</insert>
   
   
   <select id="findPermissionIdByCode" resultType="java.util.Map">

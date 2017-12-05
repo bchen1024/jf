@@ -1,7 +1,6 @@
 
 package org.btsoft.jf.support.web.servlet;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
 
@@ -16,6 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.btsoft.jf.core.content.JF;
 import org.btsoft.jf.core.content.JFApplicationContext;
+import org.btsoft.jf.support.web.util.ResponseUtil;
 
 /**
  * @ClassName DispatchServlet
@@ -30,7 +30,9 @@ public class DispatchServlet extends HttpServlet {
 	@Override
 	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		Servlet servlet = this.genServlet(req, resp);
-		servlet.service(req, resp);
+		if (servlet != null) {
+			servlet.service(req, resp);
+		}
 	}
 
 	@Override
@@ -64,6 +66,7 @@ public class DispatchServlet extends HttpServlet {
 
 	private Servlet genServlet(ServletRequest req, ServletResponse resp) throws ServletException, IOException {
 		HttpServletRequest htmlReq = (HttpServletRequest) req;
+		HttpServletResponse htmlResp = (HttpServletResponse) resp;
 
 		// servlet bean名称
 		String uri = htmlReq.getRequestURI();
@@ -73,7 +76,8 @@ public class DispatchServlet extends HttpServlet {
 		JFApplicationContext application = JF.getContext();
 		// 检查bean是否存在
 		if (!application.containsBean(beanName)) {
-			throw new FileNotFoundException();
+			ResponseUtil.printException(htmlResp, "common.exception.beanNotFound", new Object[] { beanName });
+			return null;
 		}
 		return application.getBean(beanName, Servlet.class);
 	}

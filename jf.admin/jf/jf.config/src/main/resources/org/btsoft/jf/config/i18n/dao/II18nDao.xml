@@ -113,8 +113,8 @@
 	<select id="findI18ns" resultType="java.util.Map">
 		select 
 			i18n_key as i18nKey,
-			i18n_value_cn as i18nValueCN,
-			i18n_value_en as i18nValueEN
+			i18n_value_cn as i18nCN,
+			i18n_value_en as i18nEN
 			from sys_i18n_t t
 		where t.enable_flag='Y'
 	</select>

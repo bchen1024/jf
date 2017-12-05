@@ -30,15 +30,6 @@ import org.btsoft.jf.security.user.entity.UserVO;
 public interface IUserService {
 
 	/**
-	 * @Description 登录系统
-	 * @param user
-	 * @return
-	 * @author bchen
-	 * @created 2015-2-3 下午11:28:41
-	 */
-	public UserVO loginSystem(UserVO user) throws ApplicationException;
-
-	/**
 	 * @Description 分页查询用户信息
 	 * @param user
 	 * @param page

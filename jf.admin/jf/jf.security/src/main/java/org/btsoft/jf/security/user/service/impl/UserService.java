@@ -1,8 +1,6 @@
 package org.btsoft.jf.security.user.service.impl;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -38,29 +36,6 @@ public class UserService implements IUserService, IRestService {
 
 	@Inject
 	private IRelationDao relationDao;
-
-	@Override
-	public UserVO loginSystem(UserVO user) throws ApplicationException {
-		// 验证账号和密码
-		UserVO loginUser = userDao.findUserForLogin(user);
-		if (loginUser == null) {// 登录失败，用户名或密码不对
-			throw new ApplicationException("Security-00002");
-		} else if (loginUser.getUserTimeout() <= 0) {// 密码已过期
-			throw new ApplicationException("jf.security.user.0002");
-		} else {
-			// 获取当前用户拥有的有效的角色
-			RelationVO relation = new RelationVO();
-			relation.setUserId(loginUser.getUserId());
-			List<RelationVO> roles = relationDao.findRoleListByUser(relation);
-			loginUser.setRoles(roles);
-			if (!CollectionUtils.isNullOrEmpty(roles)) {
-				Map<String, Object> params = new HashMap<String, Object>();
-				params.put("roles", roles);
-				loginUser.setPermissions(relationDao.findPermissionListByUser(params));
-			}
-		}
-		return loginUser;
-	}
 
 	@Override
 	@JOperator(code = CoreConstant.JOPERATOR_CODE_LIST, descCN = UserConstant.LIST_DESC_CN, descEN = UserConstant.LIST_DESC_EN)

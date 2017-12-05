@@ -78,7 +78,7 @@ public class PermissionService implements IPermissionService, IRestService {
 		// 删除该权限点的关系数据
 		RelationVO relation = new RelationVO();
 		relation.setRelationType("role-permission");
-		relation.setRelationId(permission.getPermissionId());
+		//relation.setRelationId(permission.getPermissionId());
 		relationDao.deleteRelation(relation);
 
 		// 删除权限点
@@ -93,7 +93,7 @@ public class PermissionService implements IPermissionService, IRestService {
 		Map<String, Object> beans = JF.getContext().getBeansWithAnnotation(JResource.class);
 		if (beans != null) {
 			Map<String, PermissionVO> resourceList = new HashMap<String, PermissionVO>();
-			Map<String, Map<String, PermissionVO>> resourceMap = new HashMap<String, Map<String, PermissionVO>>();
+			Map<String, PermissionVO> methodList = new HashMap<String, PermissionVO>();
 			for (Iterator<Object> iterator = beans.values().iterator(); iterator.hasNext();) {
 				Class<?> clazz = AopUtils.getTargetClass(iterator.next());
 				if (!clazz.isAnnotationPresent(JResource.class)) {
@@ -101,86 +101,47 @@ public class PermissionService implements IPermissionService, IRestService {
 				}
 
 				// 获取JResource相关配置
-				PermissionVO permissionVO = null;
 				JResource jResource = clazz.getAnnotation(JResource.class);
 				String resourceCode = jResource.code();
-				Map<String, PermissionVO> methodMap = null;
-				if (!resourceMap.containsKey(resourceCode)) {
-					permissionVO = new PermissionVO();
+				if (!StringUtils.isEmpty(resourceCode) && !resourceList.containsKey(resourceCode)) {
+					PermissionVO permissionVO = new PermissionVO();
 					permissionVO.setPermissionCode(resourceCode);
 					permissionVO.setPermissionDescCN(jResource.descCN());
 					permissionVO.setPermissionDescEN(jResource.descEN());
 					permissionVO.setPermissionType("resource");
+					resourceList.put(resourceCode, permissionVO);
 				}
+				
+				//获取方法级权限配置
 				Method[] methods = clazz.getMethods();
 				for (Method method : methods) {
 					if (method.isAnnotationPresent(JOperator.class)) {
-						methodMap = resourceMap.get(resourceCode);
-						if (methodMap == null) {
-							methodMap = new HashMap<String, PermissionVO>();
-						}
 						JOperator operator = method.getAnnotation(JOperator.class);
-						String code = operator.code();
-						if (!StringUtils.isEmpty(code) && !methodMap.containsKey(code)) {
+						String methodCode = operator.code();
+						if (!StringUtils.isEmpty(methodCode) && !methodList.containsKey(resourceCode+methodCode)) {
 							String descCN = operator.descCN();
 							String descEN = operator.descEN();
 							PermissionVO permis = new PermissionVO();
-							permis.setPermissionCode(code);
+							permis.setPermissionCode(methodCode);
 							permis.setPermissionDescCN(descCN);
 							permis.setPermissionDescEN(descEN);
 							permis.setPermissionType("method");
-							methodMap.put(code, permis);
-							resourceMap.put(resourceCode, methodMap);
+							permis.setParentCode(resourceCode);
+							methodList.put(resourceCode+methodCode, permis);
 						}
 					}
-				}
-				if (permissionVO != null) {
-					resourceList.put(resourceCode, permissionVO);
 				}
 			}
 			List<PermissionVO> permissionList = new ArrayList<PermissionVO>();
 			for (Iterator<PermissionVO> iterator = resourceList.values().iterator(); iterator.hasNext();) {
 				permissionList.add(iterator.next());
 			}
+			for (Iterator<PermissionVO> iterator = methodList.values().iterator(); iterator.hasNext();) {
+				permissionList.add(iterator.next());
+			}
 			if (!CollectionUtils.isNullOrEmpty(permissionList)) {
 				permissionDao.batchSavePermission(permissionList);
-
-				List<Map<String, Object>> list = permissionDao.findPermissionIdByCode(permissionList);
-
-				List<PermissionVO> methodList = new ArrayList<PermissionVO>();
-				for (Iterator<String> iterator = resourceMap.keySet().iterator(); iterator.hasNext();) {
-					String code = iterator.next();
-					for (Map<String, Object> map : list) {
-						if (code.equals(map.get("permissionCode"))) {
-							Map<String, PermissionVO> methods = resourceMap.get(code);
-							for (Iterator<PermissionVO> iterator2 = methods.values().iterator(); iterator2.hasNext();) {
-								PermissionVO permissionVO = iterator2.next();
-								permissionVO.set_parentId(Long.parseLong(map.get("permissionId").toString()));
-								methodList.add(permissionVO);
-							}
-							break;
-						}
-					}
-				}
-
-				if (!CollectionUtils.isNullOrEmpty(methodList)) {
-					permissionDao.batchSavePermission(methodList);
-				}
-
-				// 失效在代码中不存在的注解权限
-				Map<String, Object> params = new HashMap<String, Object>();
-				params.put("currentUserId", permission.getCurrentUserId());
-				params.put("permissionType", "resource");
-				params.put("permissionList", permissionList);
-				int count = permissionDao.inValidPermission(params);
-				result.put("inValidResource", count);
-
-				if (!CollectionUtils.isNullOrEmpty(methodList)) {
-					params.put("permissionType", "method");
-					params.put("permissionList", methodList);
-					count = permissionDao.inValidPermission(params);
-					result.put("inValidMethod", count);
-				}
+				permissionList.clear();
 			}
 		}
 		return result;

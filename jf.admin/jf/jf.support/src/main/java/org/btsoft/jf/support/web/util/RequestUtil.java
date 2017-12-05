@@ -1,19 +1,24 @@
 package org.btsoft.jf.support.web.util;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.btsoft.jf.core.content.RequestContext;
+import org.btsoft.jf.core.utils.JsonUtils;
 import org.btsoft.jf.core.utils.StringUtils;
+import org.codehaus.jackson.map.ObjectMapper;
 
 /**
  * @ClassName RequestUtil
@@ -207,7 +212,7 @@ public class RequestUtil {
 		resp.setHeader("Access-Control-Allow-Methods","POST,GET,DELETE,PUT,OPTIONS,HEAD");
 		resp.setHeader("Access-Control-Max-Age", "3600");  
 		resp.setHeader("Content-Type", "application/json");
-		resp.setHeader("Access-Control-Allow-Headers", "token,currentLanguage,Content-Type,Access-Control-Allow-Origin,Access-Control-Allow-Methods,Access-Control-Max-Age,authorization");
+		resp.setHeader("Access-Control-Allow-Headers", "token,currentLanguage,Content-Type,Access-Control-Allow-Origin,Access-Control-Allow-Methods,Access-Control-Max-Age,Authorization");
 	}
 	
 	public static String getCookieValue(HttpServletRequest req,String name) {
@@ -220,5 +225,25 @@ public class RequestUtil {
 			}
 		}
 		return null;
+	}
+	
+	/**
+	 * @Description 判断是否为鉴权请求，如果是鉴权请求，无需token
+	 * @param req
+	 * @return
+	 * @author bchen
+	 * @created 2017年11月22日 下午10:42:26
+	 */
+	public static boolean isAuthRequest(HttpServletRequest req) {
+		String uri = req.getRequestURI();
+		return uri.startsWith(getContextPath(req)+"/auth/");
+	}
+	
+	public static Map<String,String> getParameterMap(HttpServletRequest req) throws IOException{
+		ObjectMapper mapper=new ObjectMapper();
+		ServletInputStream is= req.getInputStream();
+		Map<String,String> result=mapper.readValue(is, Map.class);
+		is.close();
+		return result;
 	}
 }

@@ -38,7 +38,6 @@ public class CurrentServlet extends HttpServlet {
 			ICurrentService currentService = iterator.next();
 			Map<String, Object> currentResult = currentService.findCurrentData();
 			result.putAll(currentResult);
-
 		}
 
 		ObjectMapper mapper = new ObjectMapper();

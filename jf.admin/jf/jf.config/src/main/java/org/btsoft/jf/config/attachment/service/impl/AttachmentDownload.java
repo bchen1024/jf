@@ -57,15 +57,14 @@ public class AttachmentDownload implements IDownloadSupport {
 		attachment.setAttachmentId(attachId);
 		attachment.setAttachmentType("attachment");
 		AttachmentVO attach=attachmentService.findDownloadAttachment(attachment);
-		if(attach==null){
-			throw new ApplicationException(AttachmentConstant.ATTACHMENT_NOT_EXISTS_EXCEPTION_);
+		if(attach!=null){
+			//设置下载名称和路径
+			FileInfo fileInfo=new FileInfo();
+			fileInfo.setFileName(attach.getAttachmentName());
+			fileInfo.setFilePath(attach.getAttachmentPath());
+			return fileInfo;
 		}
-		
-		//设置下载名称和路径
-		FileInfo fileInfo=new FileInfo();
-		fileInfo.setFileName(attach.getAttachmentName());
-		fileInfo.setFilePath(attach.getAttachmentPath());
-		return fileInfo;
+		return null;
 	}
 
 	@Override

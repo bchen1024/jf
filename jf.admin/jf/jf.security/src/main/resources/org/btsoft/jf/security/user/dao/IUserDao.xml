@@ -4,23 +4,25 @@
 <mapper namespace="org.btsoft.jf.security.user.dao.IUserDao">
 
 	<!--根据账号/邮箱和密码去获取用户信息，登录系统所用-->
-    <select id="findUserForLogin" resultType="org.btsoft.jf.security.user.entity.UserVO">
+    <select id="findUserByAccount" resultType="org.btsoft.jf.security.user.entity.UserVO">
     	select 
     	   u.user_id            as userId,
 	       u.user_account       as userAccount,
+	       u.user_password      as userPassword,
 	       u.user_name          as userName,
 	       u.user_email         as userEmail,
 	       u.user_phone         as userPhone,
 	       u.user_desc          as userDesc,
 	       u.user_timeout       as userTimeout,
-	       nvl(u.password_error,0) as passwordError,
-	       u.display_name       as displayName
+	       ifnull(u.password_error,0) as passwordError,
+	       u.display_name       as displayName,
+	       u.lock_time          as lockTime
 	    from sys_user_t u
 	    where u.enable_flag='Y'
-	    	and u.user_password=#{userPassword,jdbcType=VARCHAR}
-	    	and (u.user_account=#{userAccount,jdbcType=VARCHAR}
-	    	  or u.user_email=#{userAccount,jdbcType=VARCHAR}
-	    	  or u.user_phone=#{userAccount,jdbcType=VARCHAR})
+	    	and (lower(u.user_account)=lower(#{userAccount,jdbcType=VARCHAR})
+	    	  or lower(u.user_email)=lower(#{userAccount,jdbcType=VARCHAR})
+	    	  or lower(u.user_phone)=lower(#{userAccount,jdbcType=VARCHAR})
+	    	)
     </select>
     
 	<sql id="base_sql">
@@ -165,7 +167,7 @@
 		where user_id = #{userId,jdbcType=NUMERIC}
 		<if test="userAccount!=null">
 	   	 	or u.user_account=#{userAccount,jdbcType=VARCHAR}
-	   	 </if>
+	   	</if>
     </update>
 	 
 	<select id="queryUser" resultType="org.btsoft.jf.security.user.entity.UserVO">
@@ -185,4 +187,11 @@
   		)
   		and rownum &lt; 20
 	</select>
+	
+	<update id="updatePasswordErrorNumber">
+		update sys_user_t u set 
+			u.lock_time=#{lockTime},
+			u.password_error=#{passwordError,jdbcType=NUMERIC}
+		where lower(u.user_account)=lower(#{userAccount,jdbcType=VARCHAR})
+	</update>
 </mapper>

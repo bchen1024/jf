@@ -1,11 +1,22 @@
 package org.btsoft.jf.core.utils;
 
+import java.security.Key;
+import java.util.Date;
 import java.util.Random;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import javax.xml.bind.DatatypeConverter;
+
+import org.btsoft.jf.core.application.IUserPrincipal;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtBuilder;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 
 /**
  * @ClassName DESEncrypt
@@ -14,6 +25,13 @@ import javax.crypto.spec.DESKeySpec;
  * @created 2014-6-10 下午11:17:07
  */
 public class DESEncrypt {
+
+	/**
+	 * 签名密钥字符串
+	 */
+	private final static String SIGNING_KEY = "qazwsxedcasdfghj";
+	
+	private final static long EXPIRATION_TIME=1000 * 60 * 60 * 24;
 
 	/**
 	 * @Description 加密字符串
@@ -92,5 +110,47 @@ public class DESEncrypt {
 			e.printStackTrace();
 		}
 		return ch;
+	}
+
+	public static String createJWT(IUserPrincipal user,long expirationTime,String signingKeyStr) {
+		SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
+		if(signingKeyStr==null) {
+			signingKeyStr=SIGNING_KEY;
+		}
+		byte[] apiKeySecretBytes = DatatypeConverter.parseBase64Binary(signingKeyStr);
+		Key signingKey = new SecretKeySpec(apiKeySecretBytes, signatureAlgorithm.getJcaName());
+		long now = System.currentTimeMillis();
+		Date nowDate=new Date(now);
+		if(expirationTime==0) {
+			expirationTime=EXPIRATION_TIME;
+		}
+		Date expirationDate=new Date(now+expirationTime);
+		JwtBuilder builder = Jwts.builder()
+				.setHeaderParam("typ", "JWT")//
+				.setHeaderParam("alg", "HS256")//加密算法
+				.setIssuedAt(nowDate) //设置jwt生成时间
+				.setNotBefore(nowDate)
+				.setExpiration(expirationDate)
+				.signWith(signatureAlgorithm, signingKey)
+				.claim("userAccount",user.getUserAccount());
+		if(user!=null) {
+			//请求主体
+			builder.setIssuer(user.getUserAccount());
+		}
+		return builder.compact();
+	}
+	
+	public static Claims parseJWT(String jwt,String signingKeyStr) {
+		if(signingKeyStr==null) {
+			signingKeyStr=SIGNING_KEY;
+		}
+		Claims claim=Jwts.parser()
+				.setSigningKey(DatatypeConverter.parseBase64Binary(signingKeyStr))
+				.parseClaimsJws(jwt).getBody();
+		return claim;
+	}
+	
+	public static void main(String[] args) {
+		System.out.println(DESEncrypt.encrypt("guest"));
 	}
 }

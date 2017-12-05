@@ -14,7 +14,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.util.Map;
 
 import javax.inject.Named;
@@ -23,14 +22,16 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
 import org.btsoft.jf.core.content.JF;
 import org.btsoft.jf.core.exception.ApplicationException;
+import org.btsoft.jf.core.exception.JFSecurityException;
 import org.btsoft.jf.core.file.FileInfo;
 import org.btsoft.jf.core.file.IDownloadSupport;
+import org.btsoft.jf.core.utils.StreamUtil;
+import org.btsoft.jf.core.utils.StringUtils;
 import org.btsoft.jf.support.web.util.RequestUtil;
+import org.btsoft.jf.support.web.util.ResponseUtil;
 import org.btsoft.jf.support.web.util.WebSupport;
-import org.springframework.beans.BeansException;
 
 /**
  * @ClassName DownloadServlet
@@ -43,83 +44,102 @@ public class DownloadServlet extends HttpServlet {
 
 	private static final long serialVersionUID = -4391033795032408125L;
 
-	private static Logger logger = Logger.getLogger(DownloadServlet.class);
-
 	@Override
-	protected void service(HttpServletRequest req, HttpServletResponse resp)
-			throws ServletException, IOException {
+	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		// 设置编码
 		req.setCharacterEncoding(WebSupport.UTF_8);
 		resp.setCharacterEncoding(WebSupport.UTF_8);
 
-		// 获取下载处理类
+		// 下载处理类为空
 		String dlType = req.getParameter("dlType");
-		if (dlType == null || dlType.trim().length() == 0) {
-			PrintWriter out = resp.getWriter();
-			resp.setContentType(WebSupport.HTML_CONTENT_TYPE);
-			out.println("下载出错,没有dlType参数");
-			out.close();
+		if (StringUtils.isEmpty(dlType)) {
+			ResponseUtil.printException(resp, "attachment.exception.dlTypeIsNull");
+			return;
 		}
 
-		Map<String, String> params =RequestUtil.getRequestParams(req);
+		// 附件id为空
+		String attachmentId = req.getParameter("attachmentId");
+		if (StringUtils.isEmpty(attachmentId)) {
+			ResponseUtil.printException(resp, "attachment.exception.attachmentIdIsNull");
+			return;
+		}
 
+		// dlType处理类未定义
+		IDownloadSupport download = null;
 		String downloadBean = "IDownloadSupport." + dlType;
 		try {
-			IDownloadSupport download = JF.getContext().getBean(
-					downloadBean, IDownloadSupport.class);
-			if (download.checkSecurity(params)) {
-				FileInfo fileInfo = download.processFile(params);
-				if (fileInfo != null) {
-					String contentType = getServletContext().getMimeType(
-							fileInfo.getFilePath());
-					if (contentType == null) {
-						contentType = "application/octet-stream";
-					}
-					resp.setContentType(contentType);
-					String fileName=new String(fileInfo.getFileName().getBytes(),"ISO-8859-1");
-					resp.setHeader("Content-disposition",
-							"attachment;filename=\"" + fileName
-									+ "\"");
-					InputStream is = null;
-					OutputStream os = null;
-					FileInputStream fis=null;
-					try {
-						fis=new FileInputStream(fileInfo.getFilePath());
-						is = new BufferedInputStream(fis);
-						os = new BufferedOutputStream(resp.getOutputStream());
-						byte[] buffer = new byte[4 * 1024*1024];
-						int read = 0;
-						while ((read = is.read(buffer)) != -1) {
-							os.write(buffer, 0, read);
-						}
-						os.flush();
-						//os.write(baos.toByteArray());
-					} catch (Exception e) {
-						PrintWriter out = resp.getWriter();
-						resp.setContentType(WebSupport.HTML_CONTENT_TYPE);
-						out.println("下载出错:"+e.getMessage());
-						out.close();
-					} finally {
-						if(fis!=null){
-							fis.close();
-						}
-						if (is != null) {
-							is.close();
-						}
-						if (os != null) {
-							os.close();
-						}
-					}
-				}
-			} else {
-				logger.error("下载出错,无权下载");
-			}
-		} catch (BeansException | ApplicationException e) {
-			PrintWriter out = resp.getWriter();
-			resp.setContentType(WebSupport.HTML_CONTENT_TYPE);
-			out.println("下载出错:"+e.getMessage());
-			out.close();
+			download = JF.getContext().getBean(downloadBean, IDownloadSupport.class);
+		} catch (Exception e) {
+			ApplicationException ex = new ApplicationException("attachment.exception.dlTypeNotFound",
+					new Object[] { downloadBean });
+			ResponseUtil.printException(resp, ex);
+			return;
 		}
 
+		// 执行下载
+		processDownload(download, req, resp);
+
+	}
+
+	private void processDownload(IDownloadSupport download, HttpServletRequest req, HttpServletResponse resp)
+			throws IOException {
+		try {
+			Map<String, String> params = RequestUtil.getRequestParams(req);
+
+			// 无权限下载
+			if (!download.checkSecurity(params)) {
+				JFSecurityException e = new JFSecurityException();
+				ResponseUtil.printException(resp, e);
+				return;
+			}
+
+			if (download.checkSecurity(params)) {
+				FileInfo fileInfo = download.processFile(params);
+
+				// 文件找不到
+				if (fileInfo == null) {
+					ResponseUtil.printException(resp, "attachment.exception.fileNotFound", 404);
+					return;
+				}
+
+				// 设置文件类型
+				String contentType = getServletContext().getMimeType(fileInfo.getFilePath());
+				if (contentType == null) {
+					contentType = "application/octet-stream";
+				}
+				resp.setContentType(contentType);
+
+				// 设置文件名称，这样处理可解决中文乱码问题
+				String fileName = new String(fileInfo.getFileName().getBytes(), "ISO-8859-1");
+				resp.setHeader("Content-disposition", "attachment;filename=\"" + fileName + "\"");
+
+				InputStream is = null;
+				OutputStream os = null;
+				FileInputStream fis = null;
+				try {
+					fis = new FileInputStream(fileInfo.getFilePath());
+					is = new BufferedInputStream(fis);
+					os = new BufferedOutputStream(resp.getOutputStream());
+					byte[] buffer = new byte[4 * 1024 * 1024];
+					int read = 0;
+					while ((read = is.read(buffer)) != -1) {
+						os.write(buffer, 0, read);
+					}
+					os.flush();
+				} catch (Exception e) {
+					ResponseUtil.printException(resp, "attachment.exception.downloadException");
+					return;
+				} finally {
+					StreamUtil.close(fis);
+					StreamUtil.close(is, os);
+				}
+			}
+		} catch (Exception e) {
+			if (e instanceof ApplicationException) {
+				ResponseUtil.printException(resp, (ApplicationException) e);
+			} else {
+				ResponseUtil.printException(resp, new ApplicationException());
+			}
+		}
 	}
 }

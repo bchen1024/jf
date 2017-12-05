@@ -1,6 +1,7 @@
 package org.btsoft.jf.core.cache;
 
 import org.btsoft.jf.core.content.JF;
+import org.btsoft.jf.core.utils.StringUtils;
 
 /**
  * @ClassName JFCache
@@ -50,7 +51,7 @@ public class JFCache {
 	public static String getCahce(String cacheName,String cacheKey,String defaultValue){
 		ICache cache=JFCache.getCacheManager(cacheName);
 		String value=cache.getValue(cacheKey);
-		return value==null?defaultValue:value;
+		return StringUtils.isEmpty(value)?defaultValue:value;
 	}
 	
 	/**

@@ -1,5 +1,6 @@
 package org.btsoft.jf.support.web.filter;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import javax.servlet.Filter;
@@ -33,20 +34,15 @@ public class RequestFilter implements Filter {
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
-		HttpServletRequest req = (HttpServletRequest) request;
-		HttpServletResponse resp = (HttpServletResponse) response;
-		String uri = req.getRequestURI();
-		if(!"OPTIONS".equals(req.getMethod())) {
-			logger.debug("[request url:"+uri+"]");
+		try {
+			HttpServletRequest req = (HttpServletRequest) request;
+			HttpServletResponse resp = (HttpServletResponse) response;
+			chain.doFilter(req, resp);
+		}catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}catch (Exception e) {
+			e.printStackTrace();
 		}
-		//允许跨域
-		RequestUtil.allowCrossDomain(resp);
-		
-		//构建上下文
-		RequestContext rc=new RequestContext();
-		RequestUtil.buildRequestContext(req,rc);
-		
-		chain.doFilter(req, resp);
 	}
 
 	@Override

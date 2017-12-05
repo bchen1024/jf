@@ -33,8 +33,8 @@ public interface AttachmentConstant {
 	public final static String DOWNLOAD_URL="servlet/download?dlType=attachment";
 	
 	//附件id非数字异常
-	public final static String ATTACHMENT_ID_EXCEPTION_="jf.exception.attachement.attachementIdNoNumber";
+	public final static String ATTACHMENT_ID_EXCEPTION_="attachement.exception.attachmentIdError";
 	
 	//附件记录不存在异常
-	public final static String ATTACHMENT_NOT_EXISTS_EXCEPTION_="jf.exception.attachement.attachementNotExists";
+	public final static String ATTACHMENT_NOT_EXISTS_EXCEPTION_="attachement.exception..attachementNotExists";
 }

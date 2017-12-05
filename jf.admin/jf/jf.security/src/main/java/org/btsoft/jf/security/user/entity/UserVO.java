@@ -1,5 +1,6 @@
 package org.btsoft.jf.security.user.entity;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,7 @@ public class UserVO extends BaseVO implements IUserPrincipal {
 	private String userDesc;// 用户描述
 	private int userTimeout;// 用户密码有效期
 	private int passwordError;// 密码错误次数
+	private Date lockTime; //锁定时间
 	private String displayName;//用户显示名称
 	private List<RelationVO> roles;// 用户所有角色
 	private List<String> permissions;// 用户权限点
@@ -111,6 +113,14 @@ public class UserVO extends BaseVO implements IUserPrincipal {
 
 	public void setPasswordError(int passwordError) {
 		this.passwordError = passwordError;
+	}
+
+	public Date getLockTime() {
+		return lockTime;
+	}
+
+	public void setLockTime(Date lockTime) {
+		this.lockTime = lockTime;
 	}
 
 	public List<RelationVO> getRoles() {

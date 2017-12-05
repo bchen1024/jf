@@ -10,24 +10,15 @@ import org.btsoft.jf.core.entity.BaseVO;
  */
 public class PermissionVO extends BaseVO {
 	private static final long serialVersionUID = 82035009337446636L;
-	private Long permissionId;// 权限点id
 	private String permissionCode;// 权限code
 	private String permissionDescCN;// 权限中文描述
 	private String permissionDescEN;// 权限英文描述
 	private String permissionDesc;// 显示名称
 	private String permissionType;// 权限类型
-	private Long _parentId;// 父级id
+	private String parentCode;// 父级code
 	private String parentPermissionName;
 	private String permissionUrl;// 绑定url
 	private String permissionSource;// 权限点来源 custom:自定义手动添加；annotation:注解扫描
-
-	public Long getPermissionId() {
-		return permissionId;
-	}
-
-	public void setPermissionId(Long permissionId) {
-		this.permissionId = permissionId;
-	}
 
 	public String getPermissionCode() {
 		return permissionCode;
@@ -69,12 +60,12 @@ public class PermissionVO extends BaseVO {
 		this.permissionType = permissionType;
 	}
 
-	public Long get_parentId() {
-		return _parentId;
+	public String getParentCode() {
+		return parentCode;
 	}
 
-	public void set_parentId(Long _parentId) {
-		this._parentId = _parentId;
+	public void setParentCode(String parentCode) {
+		this.parentCode = parentCode;
 	}
 
 	public String getParentPermissionName() {

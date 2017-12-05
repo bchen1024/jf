@@ -12,7 +12,7 @@ public class ApplicationException extends Exception implements Serializable {
 
 	private static final long serialVersionUID = -7064541762953787503L;
 
-	private String errorCode;
+	private String errorCode="exception.message.systemException";
 	private Object[] args;
 	private int httpCode=500;
 
@@ -45,6 +45,19 @@ public class ApplicationException extends Exception implements Serializable {
 
 	public ApplicationException(String errorCode, Object[] args) {
 		super(errorCode);
+		this.errorCode = errorCode;
+		this.args = args;
+	}
+	
+	public ApplicationException(int httpCode,String errorCode) {
+		super(errorCode);
+		this.httpCode=httpCode;
+		this.errorCode = errorCode;
+	}
+	
+	public ApplicationException(int httpCode,String errorCode, Object[] args) {
+		super(errorCode);
+		this.httpCode=httpCode;
 		this.errorCode = errorCode;
 		this.args = args;
 	}

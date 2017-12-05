@@ -14,6 +14,7 @@ import org.btsoft.jf.config.personalized.service.IGlobalPersonalizedService;
 import org.btsoft.jf.config.property.dao.IPropertyDao;
 import org.btsoft.jf.config.property.entity.PropertyVO;
 import org.btsoft.jf.core.content.ICurrentService;
+import org.btsoft.jf.core.content.RequestContext;
 import org.btsoft.jf.core.utils.CollectionUtils;
 import org.btsoft.jf.core.utils.JsonUtils;
 import org.btsoft.jf.core.utils.StringUtils;
@@ -70,6 +71,9 @@ public class GlobalPersonalizedService implements ICurrentService,IGlobalPersona
 		try {
 			personalized.setPersonalizedContent(JsonUtils.objectToJsonStr(global));
 			dao.savePersonalized(personalized);
+			if(content.containsKey("currentLanguage")){
+				RequestContext.getCurrent().setCurrentLanguage(content.get("currentLanguage").toString());
+			}
 		} catch (Exception e) {
 			
 		} 

@@ -92,6 +92,9 @@ public class AttachmentVO extends BaseVO {
 	}
 
 	public String getAttachmentExists() {
+		if(this.attachmentPath==null) {
+			return "N";
+		}
 		File f = new File(this.attachmentPath);
 		if (f.exists()) {
 			this.attachmentExists = "Y";

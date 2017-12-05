@@ -1,6 +1,7 @@
 package org.btsoft.jf.security.user.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import org.btsoft.jf.core.entity.PageVO;
 import org.btsoft.jf.core.entity.PagedResult;
@@ -21,7 +22,7 @@ public interface IUserDao {
 	 * @author bchen
 	 * @created 2013-12-9 9:55:07
 	 */
-	UserVO findUserForLogin(UserVO user);
+	UserVO findUserByAccount(UserVO user);
 
 	/**
 	 * @Description 分页查询用户信息
@@ -76,4 +77,13 @@ public interface IUserDao {
 	 * @created 2016-10-22 下午11:55:49
 	 */
 	List<UserVO> queryUser(UserVO user);
+	
+	/**
+	 * @Description 更新密码错误次数
+	 * @param user
+	 * @return
+	 * @author bchen
+	 * @created 2017年11月15日 下午10:48:14
+	 */
+	int updatePasswordErrorNumber(Map<String, Object> user);
 }

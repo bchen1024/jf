@@ -18,7 +18,9 @@
 		<trim prefix="where" prefixOverrides="and || or">
 			t.enable_flag='Y'
 			<if test="param1.queryParams!=null">
-				and trim(lower(t.personalized_key)) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+				and (trim(lower(t.personalized_key)) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%'))) or
+				     trim(lower(t.personalized_content)) like trim(lower(concat('%',#{0.queryParams,jdbcType=VARCHAR},'%')))
+				    )
 			</if>
 		</trim>
 	</sql>

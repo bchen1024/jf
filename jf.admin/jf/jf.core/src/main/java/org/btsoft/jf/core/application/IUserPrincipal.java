@@ -1,5 +1,6 @@
 package org.btsoft.jf.core.application;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -16,8 +17,14 @@ public interface IUserPrincipal {
 	public String getUserName();
 
 	public String getUserAccount();
+	
+	public String getUserPassword();
 
 	public String getUserEmail();
+	
+	public int getPasswordError();
+	
+	public Date getLockTime();
 	
 	public List<String> getPermissions();
 	

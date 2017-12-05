@@ -18,4 +18,5 @@ public interface WebSupport {
 
 	public final static String UTF_8 = "utf-8";
 	public final static String HTML_CONTENT_TYPE = "text/html;charset=utf-8";
+	public final static String JSON_CONTENT_TYPE = "application/json;charset=utf-8";
 }
