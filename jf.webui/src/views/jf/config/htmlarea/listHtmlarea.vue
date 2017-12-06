@@ -65,33 +65,21 @@
         </Modal>
         <!--添加编辑Modal-->
         <Modal v-model="grid.addOrEditModal" width="860"  :title="$t('common.addEdit')">
-            <Form ref="formMain" :model="grid.formValidate" :rules="grid.ruleValidate" :label-width="110">
-                <Row>
-                    <Col span="12">
-                        <Form-item :label="$t('htmlarea.name')" prop="htmlAreaName">
-                            <Input v-model="grid.formValidate.htmlAreaName"></Input>
-                        </Form-item>
-                    </Col>
-                    <Col span="12">
-                        <Form-item :label="$t('htmlarea.type')" prop="htmlAreaType">
-                            <Select v-model="grid.formValidate.htmlAreaType">
-                                <Option v-for="item in grid.htmlAreaTypes" :value="item.itemNo" :key="item.itemId">{{item.itemName}}</Option>
-                            </Select>
-                        </Form-item>
-                    </Col>
-                </Row>
-                <Row>
-                    <Col span="12">
-                        <Form-item :label="$t('htmlarea.title')" prop="htmlAreaTitle">
-                            <Input v-model="grid.formValidate.htmlAreaTitle"></Input>
-                        </Form-item>
-                     </Col>
-                    <Col span="12">
-                        <Form-item :label="$t('htmlarea.mappingUrl')">
-                            <Input v-model="grid.formValidate.htmlAreaMappingUrl"></Input>
-                        </Form-item>
-                    </Col>
-                </Row>
+            <Form ref="formMain" :model="grid.formValidate" :rules="grid.ruleValidate" labelWidth=110>
+                <Form-item :label="$t('htmlarea.name')" prop="htmlAreaName">
+                    <Input v-model="grid.formValidate.htmlAreaName"></Input>
+                </Form-item>
+                <Form-item :label="$t('htmlarea.type')" prop="htmlAreaType">
+                    <Select v-model="grid.formValidate.htmlAreaType">
+                        <Option v-for="item in grid.htmlAreaTypes" :value="item.itemNo" :key="item.itemId">{{item.itemName}}</Option>
+                    </Select>
+                </Form-item>
+                <Form-item :label="$t('htmlarea.title')" prop="htmlAreaTitle">
+                    <Input v-model="grid.formValidate.htmlAreaTitle"></Input>
+                </Form-item>
+                <Form-item :label="$t('htmlarea.mappingUrl')">
+                    <Input v-model="grid.formValidate.htmlAreaMappingUrl"></Input>
+                </Form-item>
                 <Form-item :label="$t('htmlarea.content')" prop="htmlAreaContent">
                     <Input v-model="grid.formValidate.htmlAreaContent" type="textarea"></Input>
                 </Form-item>

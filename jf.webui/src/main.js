@@ -8,6 +8,8 @@ import Routers from './routers';
 import {I18n} from './libs/jf';
 import 'iview/dist/styles/iview.css';
 
+import JFForm from './components/jf-form.vue';
+
 Vue.use(VueRouter);
 Vue.use(Vuex);
 Vue.use(VueI18n);
@@ -45,7 +47,7 @@ const store = new Vuex.Store({
         breadcrumbs:[]
     }
 });
-
+Vue.component('jf-form',JFForm);
 new Vue({
     el: '#app',
     router: router,
