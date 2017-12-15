@@ -8,12 +8,13 @@ import Routers from './routers';
 import {I18n} from './libs/jf';
 import 'iview/dist/styles/iview.css';
 
-import JFForm from './components/jf-form.vue';
+import JFView from './components/index.js';
 
 Vue.use(VueRouter);
 Vue.use(Vuex);
 Vue.use(VueI18n);
 Vue.use(iView);
+Vue.use(JFView);
 // 路由配置
 const router = new VueRouter({
     mode: 'history',
@@ -47,7 +48,6 @@ const store = new Vuex.Store({
         breadcrumbs:[]
     }
 });
-Vue.component('jf-form',JFForm);
 new Vue({
     el: '#app',
     router: router,

@@ -46,26 +46,30 @@
         </div>
         
         <div class="layout-ceiling-main">
-            <Dropdown v-if="$store.state.workspace.global.switchLanguage!='N'" @on-click="changeLanguage">
-                <a href="javascript:void(0)">
-                    {{$t('common.'+($store.state.workspace.global.currentLanguage || 'zh_CN'))}}
-                    <Icon type="arrow-down-b"></Icon>
-                </a>
-                <Dropdown-menu slot="list">
-                    <Dropdown-item name="zh_CN">{{$t('common.zh_CN')}}</Dropdown-item>
-                    <Dropdown-item name="en_US">{{$t('common.en_US')}}</Dropdown-item>
-                </Dropdown-menu>
-            </Dropdown>
-            <Dropdown @on-click="personalClick">
-                <a href="javascript:void(0)">
-                    {{$store.state.workspace.user.displayName}}
-                    <Icon type="arrow-down-b"></Icon>
-                </a>
-                <Dropdown-menu slot="list">
-                    <Dropdown-item name="personal">{{$t('common.personal')}}</Dropdown-item>
-                    <Dropdown-item name="logout">{{$t('common.logout')}}</Dropdown-item>
-                </Dropdown-menu>
-            </Dropdown>
+            <template v-if='$store.state.workspace.global'>
+                <Dropdown v-if="$store.state.workspace.global.switchLanguage!='N'" @on-click="changeLanguage">
+                    <a href="javascript:void(0)">
+                        {{$t('common.'+($store.state.workspace.global.currentLanguage || 'zh_CN'))}}
+                        <Icon type="arrow-down-b"></Icon>
+                    </a>
+                    <Dropdown-menu slot="list">
+                        <Dropdown-item name="zh_CN">{{$t('common.zh_CN')}}</Dropdown-item>
+                        <Dropdown-item name="en_US">{{$t('common.en_US')}}</Dropdown-item>
+                    </Dropdown-menu>
+                </Dropdown>
+            </template>
+            <template v-if='$store.state.workspace.user'>
+                <Dropdown @on-click="personalClick">
+                    <a href="javascript:void(0)">
+                        {{$store.state.workspace.user.displayName}}
+                        <Icon type="arrow-down-b"></Icon>
+                    </a>
+                    <Dropdown-menu slot="list">
+                        <Dropdown-item name="personal">{{$t('common.personal')}}</Dropdown-item>
+                        <Dropdown-item name="logout">{{$t('common.logout')}}</Dropdown-item>
+                    </Dropdown-menu>
+                </Dropdown>
+            </template>
         </div>
     </Menu>
 </template>

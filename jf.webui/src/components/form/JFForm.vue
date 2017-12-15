@@ -9,6 +9,15 @@
                     </Option>
                 </Select>
             </template>
+            <!--Radio组件-->
+            <template v-else-if='item.type=="radio"'>
+                <RadioGroup v-model="form.data[item.prop]">
+                    <Radio v-for='option in item.options' :key='option.value' :label='option.value'>
+                        {{option.text}}
+                    </Radio>
+                </RadioGroup>
+            </template>
+            <!--Input组件-->
             <template v-else>
                 <Input v-model="form.data[item.prop]"></Input>
             </template>
@@ -17,7 +26,7 @@
 </template>
 <script>
     export default {
-        name:'jf-form',
+        name:'JFForm',
         props:{
             form:{
                 type:Object,
