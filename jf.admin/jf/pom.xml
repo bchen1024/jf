@@ -221,8 +221,7 @@
 		<module>jf.support</module>
 		<module>jf.config</module>
 		<module>jf.monitor</module>
-		<module>jf.web</module>
-    <module>jf.war</module>
+    	<module>jf.war</module>
   </modules>
 
 	<build>
